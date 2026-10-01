@@ -235,3 +235,59 @@ Content-Type: application/json
 ### 5.6 Lihat Seluruh Buku Jurnal Umum (General Ledger)
 GET {{baseUrl}}/finance/jurnal
 
+
+### ==========================================================================
+### 6. PENGUJIAN MANAJEMEN USER & ROLE-BASED ACCESS CONTROL (RBAC)
+### ==========================================================================
+
+### 6.1 Login sebagai Manager (Akses Penuh: Dashboard, Finance, HR, Procurement, Inventory, Users)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "manager",
+  "password": "manager123"
+}
+
+### 6.2 Login sebagai User Finance (Hanya Modul Finance)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "finance",
+  "password": "finance123"
+}
+
+### 6.3 Login sebagai User HR (Hanya Modul HCM & Payroll)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "hr",
+  "password": "hr123"
+}
+
+### 6.4 Login sebagai User Procurement (Hanya Modul Procurement)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "username": "procurement",
+  "password": "procurement123"
+}
+
+### 6.5 Ambil Daftar Semua User (Manager Only)
+GET {{baseUrl}}/users
+
+### 6.6 FITUR CREATE USER: Manager Membuat Pengguna Baru
+POST {{baseUrl}}/users
+Content-Type: application/json
+
+{
+  "nama_lengkap": "Sari Melati",
+  "username": "sari_finance",
+  "password": "password123",
+  "role": "FINANCE"
+}
+
+

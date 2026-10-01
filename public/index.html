@@ -98,6 +98,19 @@
               <span class="nav-badge" id="badge-stok-alert">3 Alert</span>
             </a>
           </li>
+
+          <!-- 6. Manajemen Pengguna & Hak Akses (Manager Only) -->
+          <li class="nav-item" id="nav-item-users">
+            <a href="#users" class="nav-link" id="nav-users" data-module="users">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span>Manajemen User</span>
+            </a>
+          </li>
         </ul>
       </nav>
 
@@ -109,12 +122,15 @@
             <span class="store-status">Sistem Online &bull; DB Terkoneksi</span>
           </div>
         </div>
-        <div class="user-profile">
-          <div class="avatar">F</div>
+        <div class="user-profile" id="btn-user-profile" onclick="openModal('modal-switch-user')" title="Klik untuk ganti pengguna / role" style="cursor: pointer;">
+          <div class="avatar" id="current-user-avatar">F</div>
           <div class="user-info">
-            <span class="user-name">Fikri</span>
-            <span class="user-role">Store Manager & Owner</span>
+            <span class="user-name" id="current-user-name">Fikri</span>
+            <span class="user-role" id="current-user-role">Store Manager & Owner</span>
           </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: auto; opacity: 0.6;">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
         </div>
       </div>
     </aside>
@@ -150,6 +166,11 @@
               <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
             </svg>
             <span>Refresh</span>
+          </button>
+
+          <button class="btn btn-secondary" onclick="openModal('modal-switch-user')" id="btn-topbar-switch" title="Ganti Pengguna / Role" style="display: flex; align-items: center; gap: 8px;">
+            <span id="badge-topbar-role" class="badge-status safe" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 700;">MANAGER</span>
+            <span style="font-size: 0.85rem;">Ganti Akun</span>
           </button>
 
           <button class="btn btn-primary" id="btn-topbar-action">
@@ -923,6 +944,81 @@
           </div>
         </section>
 
+        <!-- ============================================================== -->
+        <!-- MODULE 6: USER MANAGEMENT & RBAC (MANAGER ONLY)                 -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-users" data-module="users">
+          <div class="view-header">
+            <div>
+              <h2 class="view-title">👥 Manajemen Pengguna & Hak Akses (RBAC)</h2>
+              <p class="view-desc">Kelola akun staf dan atur izin akses modul (Manager, Finance, HR, Procurement)</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-primary" onclick="openModal('modal-create-user')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+                <span>+ Buat User Baru</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Role Info Cards -->
+          <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+            <div class="stat-card" style="border-left: 4px solid var(--accent-gold);">
+              <div class="stat-title">👑 Manager (Owner)</div>
+              <div class="stat-value" id="count-role-manager">1 User</div>
+              <div class="stat-desc">Akses Penuh Seluruh Modul</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid #0284c7;">
+              <div class="stat-title">💰 Staff Finance</div>
+              <div class="stat-value" id="count-role-finance">1 User</div>
+              <div class="stat-desc">Hanya Modul Finance & CoA</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid #7c3aed;">
+              <div class="stat-title">👥 Staff HR / HCM</div>
+              <div class="stat-value" id="count-role-hr">1 User</div>
+              <div class="stat-desc">Hanya Modul HCM & Payroll</div>
+            </div>
+            <div class="stat-card" style="border-left: 4px solid #059669;">
+              <div class="stat-title">📦 Staff Procurement</div>
+              <div class="stat-value" id="count-role-procurement">1 User</div>
+              <div class="stat-desc">Hanya Modul Procurement & PO</div>
+            </div>
+          </div>
+
+          <!-- Table of Users -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Daftar Pengguna Sistem ERP</div>
+              <button class="btn btn-secondary btn-sm" onclick="loadUsersData()">🔄 Segarkan Data</button>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>NAMA LENGKAP</th>
+                      <th>USERNAME</th>
+                      <th>ROLE</th>
+                      <th>HAK AKSES MODUL</th>
+                      <th>STATUS</th>
+                      <th>AKSI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-users">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </div>
     </main>
   </div>
@@ -1117,6 +1213,125 @@
           <button type="submit" class="btn btn-primary">Catat Pemakaian</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal Buat User Baru (Manager Only) -->
+  <div class="modal-backdrop" id="modal-create-user">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>👤 Buat Akun Pengguna Baru</h3>
+        <button class="modal-close" onclick="closeModal('modal-create-user')">&times;</button>
+      </div>
+      <form id="form-create-user" onsubmit="submitCreateUser(event)">
+        <div class="form-group">
+          <label>Nama Lengkap Staf *</label>
+          <input type="text" id="usr-nama-input" class="form-control" placeholder="Contoh: Rina Kusuma" required>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Username *</label>
+            <input type="text" id="usr-username-input" class="form-control" placeholder="Contoh: rina_finance" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Password *</label>
+            <input type="password" id="usr-password-input" class="form-control" placeholder="Minimal 4 karakter" required minlength="4">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Pilih Role & Hak Akses *</label>
+          <select id="usr-role-select" class="form-control" required onchange="updateRoleDescriptionPreview()">
+            <option value="MANAGER">👑 MANAGER - Akses Semua Fitur (Dashboard, Inventory, Finance, HR, Procurement, Users)</option>
+            <option value="FINANCE">💰 FINANCE - Hanya Modul Finance & Buku Jurnal</option>
+            <option value="HR">👥 HR - Hanya Modul Human Capital & Payroll</option>
+            <option value="PROCUREMENT">📦 PROCUREMENT - Hanya Modul Pengadaan & Purchase Order</option>
+          </select>
+          <div id="role-preview-box" style="margin-top: 8px; font-size: 0.82rem; padding: 8px 12px; background: rgba(36, 117, 89, 0.08); border-radius: 6px; color: var(--green-deep); line-height: 1.4;">
+            ℹ️ Role ini memiliki hak akses penuh ke seluruh modul sistem ERP.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-create-user')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-user">+ Simpan Pengguna Baru</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Ganti Akun / Switch User (Login RBAC) -->
+  <div class="modal-backdrop" id="modal-switch-user">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <div>
+          <h3>🔐 Pilih Akun / Ganti Pengguna</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 4px 0 0 0;">Uji coba 4 role pengguna berbeda untuk melihat pembatasan modul secara langsung</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-switch-user')">&times;</button>
+      </div>
+
+      <!-- Quick Role Switcher Buttons -->
+      <div style="font-weight: 600; font-size: 0.88rem; margin-bottom: 10px; color: var(--text-heading);">⚡ Akses Cepat 4 Akun Bawaan:</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+        <button type="button" class="btn-role-quick" onclick="quickLogin('manager', 'manager123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">👑</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">Manager (Owner)</strong>
+            <span class="badge-status safe" style="margin-left: auto; font-size: 0.65rem;">SEMUA FITUR</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Fikri &bull; Akses semua modul</span>
+        </button>
+
+        <button type="button" class="btn-role-quick" onclick="quickLogin('finance', 'finance123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">💰</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">User Finance</strong>
+            <span class="badge-status warning" style="margin-left: auto; font-size: 0.65rem;">FINANCE ONLY</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Staff Finance &bull; Hanya Keuangan & CoA</span>
+        </button>
+
+        <button type="button" class="btn-role-quick" onclick="quickLogin('hr', 'hr123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">👥</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">User HR</strong>
+            <span class="badge-status safe" style="margin-left: auto; font-size: 0.65rem;">HR ONLY</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Staff HR &bull; Hanya HCM & Payroll</span>
+        </button>
+
+        <button type="button" class="btn-role-quick" onclick="quickLogin('procurement', 'procurement123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">📦</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">User Procurement</strong>
+            <span class="badge-status warning" style="margin-left: auto; font-size: 0.65rem;">PO ONLY</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Staff Purchasing &bull; Hanya Procurement</span>
+        </button>
+      </div>
+
+      <!-- Manual Login Form -->
+      <div style="border-top: 1px dashed var(--border-color); padding-top: 16px;">
+        <div style="font-weight: 600; font-size: 0.88rem; margin-bottom: 10px; color: var(--text-heading);">Atau Masuk dengan Akun Kustom:</div>
+        <form id="form-login-custom" onsubmit="submitCustomLogin(event)">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password">
+            </div>
+          </div>
+          <div class="modal-footer" style="padding-bottom: 0; padding-right: 0;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-switch-user')">Tutup</button>
+            <button type="submit" class="btn btn-primary">Masuk</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 

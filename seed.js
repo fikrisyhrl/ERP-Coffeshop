@@ -14,6 +14,7 @@ const {
   Attendance
 } = require('./src/models');
 const accountingService = require('./src/services/accountingService');
+const userController = require('./src/controllers/userController');
 
 async function runSeed() {
   console.log('==============================================');
@@ -220,6 +221,11 @@ async function runSeed() {
     } else {
       console.log('ℹ️ Purchase Order sudah ada di database.');
     }
+
+    // 6. Seed Default Users (Manager, Finance, HR, Procurement)
+    console.log('📌 6. Mengisi 4 Akun Pengguna Default (Manager, Finance, HR, Procurement)...');
+    await userController.seedDefaultUsers();
+    console.log('✓ 4 Akun Pengguna berhasil dibuat.');
 
     console.log('==============================================');
     console.log('🎉 SEEDING SELESAI DENGAN SUKSES! DATA REAL SUDAH TERSEDIA.');

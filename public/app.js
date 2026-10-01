@@ -18,6 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
   let purchaseOrders = [];
   let supplierList = [];
   let stockMutations = [];
+  let systemUsers = [];
+
+  // User State & RBAC Permissions
+  let currentUser = JSON.parse(localStorage.getItem('kafeina_erp_user') || 'null') || {
+    id_user: 1,
+    nama_lengkap: 'Fikri (Store Manager & Owner)',
+    username: 'manager',
+    role: 'MANAGER',
+    role_name: 'Store Manager & Owner',
+    allowed_modules: ['dashboard', 'finance', 'hcm', 'procurement', 'inventory', 'users'],
+    can_manage_users: true
+  };
 
   // Data Dummy Cadangan (Fallback jika backend belum terisi lengkap)
   const defaultMockItems = [
@@ -202,9 +214,51 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // ==============================================================
-  // 4. MODULAR VIEW SWITCHER (SPA NAVIGATION)
+  // 4. ROLE-BASED ACCESS CONTROL (RBAC) & VIEW SWITCHER
   // ==============================================================
+  window.applyRolePermissions = () => {
+    // 1. Update Profile Card & Topbar
+    const avatarEl = document.getElementById('current-user-avatar');
+    const nameEl = document.getElementById('current-user-name');
+    const roleEl = document.getElementById('current-user-role');
+    const topbarBadgeEl = document.getElementById('badge-topbar-role');
+
+    if (avatarEl) avatarEl.textContent = (currentUser.nama_lengkap || 'U').charAt(0).toUpperCase();
+    if (nameEl) nameEl.textContent = currentUser.nama_lengkap || currentUser.username;
+    if (roleEl) roleEl.textContent = currentUser.role_name || currentUser.role;
+    if (topbarBadgeEl) {
+      topbarBadgeEl.textContent = currentUser.role;
+      topbarBadgeEl.className = `badge-status ${currentUser.role === 'MANAGER' ? 'safe' : currentUser.role === 'FINANCE' ? 'warning' : 'info'}`;
+    }
+
+    // 2. Filter Nav Items in Sidebar sesuai hak akses role
+    document.querySelectorAll('.sidebar .nav-item').forEach((item) => {
+      const link = item.querySelector('.nav-link');
+      if (!link) return;
+      const mod = link.getAttribute('data-module');
+      if (!mod) return;
+
+      if (currentUser.allowed_modules && currentUser.allowed_modules.includes(mod)) {
+        item.style.display = '';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+
+    // 3. Pastikan modul yang aktif saat ini diizinkan untuk role ini
+    if (currentUser.allowed_modules && !currentUser.allowed_modules.includes(currentModule)) {
+      const firstAllowed = currentUser.allowed_modules[0] || 'dashboard';
+      switchModule(firstAllowed);
+    }
+  };
+
   window.switchModule = (targetModule) => {
+    // Validasi Izin Akses Modul berdasarkan Role Pengguna
+    if (currentUser && currentUser.allowed_modules && !currentUser.allowed_modules.includes(targetModule)) {
+      window.showToast(`⛔ Akses Ditolak: Akun Anda (${currentUser.role}) tidak diizinkan membuka modul ${targetModule.toUpperCase()}!`, 'warning');
+      return;
+    }
+
     currentModule = targetModule;
 
     // 1. Update Sidebar Active Link
@@ -264,6 +318,14 @@ document.addEventListener('DOMContentLoaded', () => {
         topbarActionText.textContent = '- Catat Pemakaian';
         btnTopbarAction.onclick = () => openModal('modal-mutasi');
         loadInventoryData();
+        break;
+
+      case 'users':
+        breadcrumbCurrent.textContent = 'Manajemen Pengguna';
+        pageTitle.textContent = 'Kontrol Akses Pengguna (RBAC)';
+        topbarActionText.textContent = '+ Buat User Baru';
+        btnTopbarAction.onclick = () => openModal('modal-create-user');
+        loadUsersData();
         break;
     }
 
@@ -1392,16 +1454,214 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'inventory':
         loadInventoryData().then(() => showToast('Data inventory diperbarui!', 'success'));
         break;
+      case 'users':
+        loadUsersData().then(() => showToast('Data pengguna diperbarui!', 'success'));
+        break;
     }
     setTimeout(() => btnRefresh.classList.remove('loading'), 600);
   });
 
-  // Initial Route Check based on URL hash
+  // ==============================================================
+  // 7. USER MANAGEMENT & RBAC AUTHENTICATION LOGIC
+  // ==============================================================
+
+  // Ambil Data Pengguna dari Backend
+  window.loadUsersData = async () => {
+    const tableBodyUsers = document.getElementById('table-body-users');
+    if (!tableBodyUsers) return;
+
+    try {
+      const res = await fetch('/api/users');
+      const data = await res.json();
+      if (data.success && data.data) {
+        systemUsers = data.data;
+      }
+    } catch {
+      console.warn('Gagal memuat daftar user dari backend');
+    }
+
+    // Hitung Statistik Pengguna
+    const mCount = systemUsers.filter((u) => u.role === 'MANAGER').length;
+    const fCount = systemUsers.filter((u) => u.role === 'FINANCE').length;
+    const hCount = systemUsers.filter((u) => u.role === 'HR').length;
+    const pCount = systemUsers.filter((u) => u.role === 'PROCUREMENT').length;
+
+    const elM = document.getElementById('count-role-manager');
+    const elF = document.getElementById('count-role-finance');
+    const elH = document.getElementById('count-role-hr');
+    const elP = document.getElementById('count-role-procurement');
+
+    if (elM) elM.textContent = `${mCount} User`;
+    if (elF) elF.textContent = `${fCount} User`;
+    if (elH) elH.textContent = `${hCount} User`;
+    if (elP) elP.textContent = `${pCount} User`;
+
+    if (!systemUsers || systemUsers.length === 0) {
+      tableBodyUsers.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-dim);">Belum ada user terdaftar.</td></tr>`;
+      return;
+    }
+
+    const roleBadges = {
+      MANAGER: '<span class="badge-status safe" style="font-weight: 700;">👑 MANAGER</span>',
+      FINANCE: '<span class="badge-status warning" style="font-weight: 700;">💰 FINANCE</span>',
+      HR: '<span class="badge-status safe" style="font-weight: 700;">👥 HR</span>',
+      PROCUREMENT: '<span class="badge-status warning" style="font-weight: 700;">📦 PROCUREMENT</span>'
+    };
+
+    const roleModules = {
+      MANAGER: '<span class="category-tag">Semua Fitur (Full Access)</span>',
+      FINANCE: '<span class="category-tag">Hanya Modul Finance & CoA</span>',
+      HR: '<span class="category-tag">Hanya Modul HCM & Payroll</span>',
+      PROCUREMENT: '<span class="category-tag">Hanya Modul Procurement & PO</span>'
+    };
+
+    tableBodyUsers.innerHTML = systemUsers
+      .map((u) => {
+        const canDelete = u.username !== 'manager' && u.id_user !== currentUser.id_user;
+        const deleteBtn = canDelete
+          ? `<button class="btn btn-secondary btn-sm" style="color: var(--status-critical); border-color: rgba(220, 38, 38, 0.3);" onclick="handleDeleteUser(${u.id_user}, '${u.username}')">🗑️ Hapus</button>`
+          : `<span style="font-size: 0.75rem; color: var(--text-dim); font-style: italic;">Akun Inti / Aktif</span>`;
+
+        return `
+          <tr>
+            <td><strong>#${u.id_user}</strong></td>
+            <td>
+              <div class="item-cell">
+                <span class="item-name">${u.nama_lengkap}</span>
+                <span class="item-code">ID: ${u.id_user}</span>
+              </div>
+            </td>
+            <td><code>${u.username}</code></td>
+            <td>${roleBadges[u.role] || u.role}</td>
+            <td>${roleModules[u.role] || '-'}</td>
+            <td><span class="badge-status safe">AKTIF</span></td>
+            <td>${deleteBtn}</td>
+          </tr>
+        `;
+      })
+      .join('');
+  };
+
+  // Submit Buat User Baru (Manager Only)
+  window.submitCreateUser = async (e) => {
+    e.preventDefault();
+    const nama_lengkap = document.getElementById('usr-nama-input').value.trim();
+    const username = document.getElementById('usr-username-input').value.trim();
+    const password = document.getElementById('usr-password-input').value;
+    const role = document.getElementById('usr-role-select').value;
+
+    const btnSubmit = document.getElementById('btn-submit-user');
+    if (btnSubmit) btnSubmit.disabled = true;
+
+    try {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nama_lengkap, username, password, role })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        closeModal('modal-create-user');
+        document.getElementById('form-create-user').reset();
+        showToast(`✓ Berhasil! User '${nama_lengkap}' (${role}) telah dibuat.`, 'success');
+        loadUsersData();
+      } else {
+        showToast(`✗ Gagal: ${data.message}`, 'warning');
+      }
+    } catch {
+      showToast('✗ Terjadi kesalahan koneksi saat membuat user baru', 'critical');
+    } finally {
+      if (btnSubmit) btnSubmit.disabled = false;
+    }
+  };
+
+  // Hapus User
+  window.handleDeleteUser = async (id, username) => {
+    if (!confirm(`Apakah Anda yakin ingin menghapus user '${username}'?`)) return;
+
+    try {
+      const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✓ User '${username}' berhasil dihapus`, 'info');
+        loadUsersData();
+      } else {
+        showToast(`✗ ${data.message}`, 'warning');
+      }
+    } catch {
+      showToast('✗ Gagal menghapus user', 'critical');
+    }
+  };
+
+  // Preview Deskripsi Role pada Modal Buat User
+  window.updateRoleDescriptionPreview = () => {
+    const role = document.getElementById('usr-role-select').value;
+    const box = document.getElementById('role-preview-box');
+    if (!box) return;
+
+    const descriptions = {
+      MANAGER: '👑 <strong>MANAGER:</strong> Akses penuh ke seluruh modul sistem ERP (Dashboard, Inventory, Finance, HR, Procurement, & Manajemen User).',
+      FINANCE: '💰 <strong>FINANCE:</strong> Hanya dapat membuka modul <em>Finance & CoA</em> (Buku Jurnal, Bagan Akun, Persetujuan Anggaran).',
+      HR: '👥 <strong>HR:</strong> Hanya dapat membuka modul <em>HCM & Payroll</em> (Data Karyawan, Rekap Absensi, Penggajian).',
+      PROCUREMENT: '📦 <strong>PROCUREMENT:</strong> Hanya dapat membuka modul <em>Procurement & PO</em> (Pengajuan PO, Daftar Supplier, Penerimaan Barang).'
+    };
+
+    box.innerHTML = descriptions[role] || '';
+  };
+
+  // Quick Login / Switch Role (4 Akun Bawaan)
+  window.quickLogin = async (username, password) => {
+    showToast(`Mengalihkan ke akun ${username.toUpperCase()}...`, 'info');
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        currentUser = data.data;
+        localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
+        closeModal('modal-switch-user');
+        applyRolePermissions();
+        showToast(`✓ Berhasil login sebagai ${currentUser.nama_lengkap} (${currentUser.role})!`, 'success');
+      } else {
+        showToast(`✗ Gagal login: ${data.message}`, 'warning');
+      }
+    } catch {
+      // Local fallback map
+      const rolesMap = {
+        manager: { id_user: 1, nama_lengkap: 'Fikri (Store Manager & Owner)', username: 'manager', role: 'MANAGER', role_name: 'Store Manager & Owner', allowed_modules: ['dashboard', 'finance', 'hcm', 'procurement', 'inventory', 'users'], can_manage_users: true },
+        finance: { id_user: 2, nama_lengkap: 'Staff Finance & Accounting', username: 'finance', role: 'FINANCE', role_name: 'Finance Specialist', allowed_modules: ['finance'], can_manage_users: false },
+        hr: { id_user: 3, nama_lengkap: 'Staff HR & People Operations', username: 'hr', role: 'HR', role_name: 'HR Specialist', allowed_modules: ['hcm'], can_manage_users: false },
+        procurement: { id_user: 4, nama_lengkap: 'Staff Procurement & Purchasing', username: 'procurement', role: 'PROCUREMENT', role_name: 'Procurement Specialist', allowed_modules: ['procurement'], can_manage_users: false }
+      };
+      currentUser = rolesMap[username] || rolesMap.manager;
+      localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
+      closeModal('modal-switch-user');
+      applyRolePermissions();
+      showToast(`✓ Berhasil login sebagai ${currentUser.nama_lengkap} (${currentUser.role})!`, 'success');
+    }
+  };
+
+  // Custom Login
+  window.submitCustomLogin = async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+    await quickLogin(username, password);
+  };
+
+  // Inisialisasi Hak Akses & Rute Awal
+  applyRolePermissions();
+  loadFinanceData();
+
   const initialHash = window.location.hash.replace('#', '');
-  loadFinanceData(); // Inisialisasi data & badge approval Finance
-  if (['dashboard', 'finance', 'hcm', 'procurement', 'inventory'].includes(initialHash)) {
+  if (currentUser.allowed_modules.includes(initialHash)) {
     switchModule(initialHash);
   } else {
-    switchModule('dashboard');
+    switchModule(currentUser.allowed_modules[0] || 'dashboard');
   }
 });

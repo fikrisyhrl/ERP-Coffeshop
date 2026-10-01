@@ -5,6 +5,7 @@ const inventoryRoutes = require('./inventoryRoutes');
 const procurementRoutes = require('./procurementRoutes');
 const payrollRoutes = require('./payrollRoutes');
 const accountingRoutes = require('./accountingRoutes');
+const userRoutes = require('./userRoutes');
 
 // Mount Rute-rute ERP Moduler
 router.use('/barang', barangRoutes);
@@ -13,6 +14,8 @@ router.use('/procurement', procurementRoutes);
 router.use('/hcm/payroll', payrollRoutes);
 router.use('/hcm', payrollRoutes);
 router.use('/finance', accountingRoutes);
+router.use('/users', userRoutes);
+router.use('/auth', userRoutes);
 
 // Info Root API
 router.get('/', (req, res) => {

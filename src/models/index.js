@@ -20,6 +20,9 @@ const ChartOfAccount = require('./ChartOfAccount');
 const JournalEntry = require('./JournalEntry');
 const JournalEntryLine = require('./JournalEntryLine');
 
+// Auth & User RBAC Models
+const User = require('./User');
+
 // ==========================================
 // DEFINISI RELASI ANTAR MODEL
 // ==========================================
@@ -92,7 +95,8 @@ const db = {
   PayrollItem,
   ChartOfAccount,
   JournalEntry,
-  JournalEntryLine
+  JournalEntryLine,
+  User
 };
 
 module.exports = db;
