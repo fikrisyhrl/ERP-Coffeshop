@@ -52,17 +52,17 @@ const startServer = async () => {
     // Uji koneksi ke database
     await testConnection();
 
-    // Sinkronisasi model Sequelize ke tabel MySQL
+    // Sinkronisasi model Sequelize ke tabel database
     // alter: true memperbarui kolom jika ada perubahan tanpa menghapus data
     try {
       await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
       console.log('✓ Tabel database berhasil disinkronisasi (Sequelize sync).');
     } catch (dbErr) {
-      console.warn('⚠️ Tidak dapat menyinkronkan database MySQL:', dbErr.message);
+      console.warn('⚠️ Tidak dapat menyinkronkan database:', dbErr.message);
       console.warn('ℹ️ Server tetap berjalan untuk melayani UI Dashboard & mode fallback.');
     }
 
-    // Jalankan server Express
+    // Jalankan server Express (hanya untuk local standalone server)
     app.listen(PORT, () => {
       console.log(`=================================================`);
       console.log(`🚀 ERP Coffee Shop Backend Server Berjalan!`);
@@ -76,4 +76,11 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Jalankan standalone server hanya jika dieksekusi langsung (bukan di-import/require) dan bukan di Vercel
+if (require.main === module && !process.env.VERCEL) {
+  startServer();
+}
+
+// Export app untuk Vercel Serverless Functions
+module.exports = app;
+
