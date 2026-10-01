@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafeina ERP - Coffee Shop Management OS</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- ============================================================== -->
+    <!-- 1. SIDEBAR NAVIGATION                                          -->
+    <!-- ============================================================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <div class="logo-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+              <line x1="6" y1="1" x2="6" y2="4"></line>
+              <line x1="10" y1="1" x2="10" y2="4"></line>
+              <line x1="14" y1="1" x2="14" y2="4"></line>
+            </svg>
+          </div>
+          <div class="brand-info">
+            <h1 class="brand-name">KAFEINA<span>ERP</span></h1>
+            <span class="brand-tag">Coffee & Roastery OS</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">MODUL UTAMA</div>
+        <ul class="nav-list">
+          <!-- 1. Dashboard Utama -->
+          <li class="nav-item">
+            <a href="#dashboard" class="nav-link active" id="nav-dashboard" data-module="dashboard">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Dashboard</span>
+            </a>
+          </li>
+
+          <!-- 2. Finance & Accounting -->
+          <li class="nav-item">
+            <a href="#finance" class="nav-link" id="nav-finance" data-module="finance">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+              <span>Finance & CoA</span>
+            </a>
+          </li>
+
+          <!-- 3. HCM & Payroll -->
+          <li class="nav-item">
+            <a href="#hcm" class="nav-link" id="nav-hcm" data-module="hcm">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span>HCM & Payroll</span>
+            </a>
+          </li>
+
+          <!-- 4. Procurement & PO -->
+          <li class="nav-item">
+            <a href="#procurement" class="nav-link" id="nav-procurement" data-module="procurement">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              <span>Procurement & PO</span>
+            </a>
+          </li>
+
+          <!-- 5. Inventory & Stok -->
+          <li class="nav-item">
+            <a href="#inventory" class="nav-link" id="nav-inventory" data-module="inventory">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+              <span>Inventory & Stok</span>
+              <span class="nav-badge" id="badge-stok-alert">3 Alert</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="store-badge">
+          <span class="status-indicator online"></span>
+          <div class="store-details">
+            <span class="store-name">Outlet Senopati</span>
+            <span class="store-status">Sistem Online &bull; DB Terkoneksi</span>
+          </div>
+        </div>
+        <div class="user-profile">
+          <div class="avatar">F</div>
+          <div class="user-info">
+            <span class="user-name">Fikri</span>
+            <span class="user-role">Store Manager & Owner</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================================== -->
+    <!-- 2. MAIN CONTENT AREA                                           -->
+    <!-- ============================================================== -->
+    <main class="main-content">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="breadcrumbs">
+            <span>ERP Coffee Shop</span>
+            <span class="separator">/</span>
+            <span class="current" id="breadcrumb-current">Dashboard Utama</span>
+          </div>
+          <h2 class="page-title" id="page-title">Executive Overview</h2>
+        </div>
+
+        <div class="topbar-right">
+          <div class="live-clock" id="live-clock">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="current-time">Memuat waktu...</span>
+          </div>
+
+          <button class="btn btn-secondary btn-icon" id="btn-refresh" title="Segarkan Data Modul">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>Refresh</span>
+          </button>
+
+          <button class="btn btn-primary" id="btn-topbar-action">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span id="topbar-action-text">+ Buat Draf PO</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Body Content -->
+      <div class="dashboard-body">
+
+        <!-- ============================================================== -->
+        <!-- VIEW 1: DASHBOARD UTAMA (EXECUTIVE OVERVIEW)                   -->
+        <!-- ============================================================== -->
+        <section class="module-view" id="view-dashboard" data-module="dashboard">
+          <!-- 4 KPI Card Widgets Utama -->
+          <div class="kpi-grid">
+            <!-- Card 1: Total Kas -->
+            <div class="kpi-card card-kas cursor-pointer" onclick="switchModule('finance')">
+              <div class="card-icon-wrapper kas-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Total Kas & Bank</span>
+                <h3 class="card-value" id="kpi-kas-value">Rp 84.750.000</h3>
+                <div class="card-trend positive">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                  </svg>
+                  <span>Kasir + Bank BCA</span>
+                  <span class="trend-sub">&bull; Buka Finance &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Total Aset -->
+            <div class="kpi-card card-aset cursor-pointer" onclick="switchModule('finance')">
+              <div class="card-icon-wrapper aset-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Total Aset & Persediaan</span>
+                <h3 class="card-value" id="kpi-aset-value">Rp 142.300.000</h3>
+                <div class="card-trend neutral">
+                  <span>Valuasi Stok HPP + Mesin</span>
+                  <span class="trend-sub">&bull; Buka Aset &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Stok Menipis -->
+            <div class="kpi-card card-warning cursor-pointer" onclick="switchModule('inventory')">
+              <div class="card-icon-wrapper warning-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Stok Bahan Menipis</span>
+                <h3 class="card-value text-warning" id="kpi-stok-warning-count">3 Komoditas</h3>
+                <div class="card-trend negative">
+                  <span class="badge-pulse"></span>
+                  <span>Di bawah batas safety</span>
+                  <span class="trend-sub">&bull; Buka Stok &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Jumlah Pegawai -->
+            <div class="kpi-card card-pegawai cursor-pointer" onclick="switchModule('hcm')">
+              <div class="card-icon-wrapper pegawai-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Jumlah Pegawai</span>
+                <h3 class="card-value" id="kpi-pegawai-value">12 Orang</h3>
+                <div class="card-trend info">
+                  <span>Barista &bull; Kitchen &bull; Floor</span>
+                  <span class="trend-sub">&bull; Buka HCM &rarr;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Navigation Banner -->
+          <div class="quick-nav-banner">
+            <div class="banner-text">
+              <h4>🚀 Navigasi Cepat Modul ERP</h4>
+              <p>Pilih modul spesifik di sidebar atau gunakan tombol di bawah untuk melihat rincian operasional coffee shop Anda.</p>
+            </div>
+            <div class="banner-buttons">
+              <button class="btn btn-secondary btn-sm" onclick="switchModule('finance')">📊 Laporan Keuangan</button>
+              <button class="btn btn-secondary btn-sm" onclick="switchModule('hcm')">👥 HCM & Slip Gaji</button>
+              <button class="btn btn-secondary btn-sm" onclick="switchModule('procurement')">📦 Pengadaan (PO)</button>
+              <button class="btn btn-primary btn-sm" onclick="switchModule('inventory')">🔍 Kontrol Stok</button>
+            </div>
+          </div>
+
+          <!-- Mini Summary Grid -->
+          <div class="summary-columns-grid">
+            <!-- Col 1: Status Keuangan Terakhir -->
+            <div class="summary-box">
+              <div class="summary-box-header">
+                <h5>Jurnal Umum Terkini</h5>
+                <a href="#finance" onclick="switchModule('finance')">Lihat Semua</a>
+              </div>
+              <div id="dash-recent-jurnal" class="recent-list">
+                <div class="recent-item">
+                  <div class="recent-icon">💸</div>
+                  <div class="recent-info">
+                    <span class="recent-title">Pembayaran Gaji Dimas Pratama</span>
+                    <span class="recent-meta">Rp 5.030.000 &bull; Beban Gaji &rarr; BCA</span>
+                  </div>
+                  <span class="badge-status safe">POSTED</span>
+                </div>
+                <div class="recent-item">
+                  <div class="recent-icon">📦</div>
+                  <div class="recent-info">
+                    <span class="recent-title">Beli Tunai Arabica House Blend</span>
+                    <span class="recent-meta">Rp 750.000 &bull; Kas Toko</span>
+                  </div>
+                  <span class="badge-status safe">POSTED</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 2: Status Pengadaan & Alert Stok -->
+            <div class="summary-box">
+              <div class="summary-box-header">
+                <h5>Peringatan Stok Mendesak</h5>
+                <a href="#inventory" onclick="switchModule('inventory')">Buka Inventory</a>
+              </div>
+              <div id="dash-recent-alerts" class="recent-list">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 2: FINANCE & ACCOUNTING                                   -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-finance" data-module="finance">
+          <!-- Finance KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">💵</div>
+              <div class="card-content">
+                <span class="card-label">Kasir / Kas Toko</span>
+                <h3 class="card-value" id="fin-kas-toko">Rp 9.250.000</h3>
+                <span class="trend-sub">Akun #1-1001</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">🏦</div>
+              <div class="card-content">
+                <span class="card-label">Bank BCA Operasional</span>
+                <h3 class="card-value" id="fin-bank-bca">Rp 75.500.000</h3>
+                <span class="trend-sub">Akun #1-1002</span>
+              </div>
+            </div>
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">📑</div>
+              <div class="card-content">
+                <span class="card-label">Beban Gaji Bulan Ini</span>
+                <h3 class="card-value" id="fin-beban-gaji">Rp 5.030.000</h3>
+                <span class="trend-sub">Akun #6-1001</span>
+              </div>
+            </div>
+            <div class="kpi-card card-pegawai">
+              <div class="card-icon-wrapper pegawai-bg">⚖️</div>
+              <div class="card-content">
+                <span class="card-label">Keseimbangan Pembukuan</span>
+                <h3 class="card-value text-safe">SEIMBANG</h3>
+                <span class="trend-sub">&Sigma; Debet == &Sigma; Kredit</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchFinanceTab('jurnal')">📖 Buku Jurnal Umum (General Ledger)</button>
+              <button class="sub-tab" onclick="switchFinanceTab('coa')">🗂️ Chart of Accounts (CoA)</button>
+              <button class="sub-tab" onclick="switchFinanceTab('approval')">💳 Persetujuan Pembelian (Procurement Approval) <span class="tab-badge" id="fin-pending-badge">0</span></button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openModal('modal-jurnal')">+ Jurnal Manual</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Jurnal Umum -->
+          <div class="sub-panel" id="panel-finance-jurnal">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">GENERAL LEDGER</div>
+                  <h3 class="table-title">Riwayat Jurnal Umum (Double-Entry Bookkeeping)</h3>
+                  <p class="table-subtitle">Pencatatan akuntansi otomatis dari transaksi kas, payroll pegawai, dan pembelian bahan baku.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-jurnal">
+                  <thead>
+                    <tr>
+                      <th>TANGGAL & NO. JURNAL</th>
+                      <th>TIPE REFERENSI</th>
+                      <th>KETERANGAN TRANSAKSI</th>
+                      <th>TOTAL DEBET</th>
+                      <th>TOTAL KREDIT</th>
+                      <th>STATUS</th>
+                      <th>DETAIL AKUN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-jurnal">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Chart of Accounts -->
+          <div class="sub-panel hidden" id="panel-finance-coa">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">COA MASTER</div>
+                  <h3 class="table-title">Daftar Akun Standar Coffee Shop</h3>
+                  <p class="table-subtitle">Klasifikasi akun keuangan terstruktur (Aset, Kewajiban, Ekuitas, Pendapatan, Beban).</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-coa">
+                  <thead>
+                    <tr>
+                      <th>KODE AKUN</th>
+                      <th>NAMA AKUN</th>
+                      <th>KLASIFIKASI TIPE</th>
+                      <th>SALDO NORMAL</th>
+                      <th>STATUS AKUN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-coa">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 3: Verifikasi & Persetujuan Pembelian Procurement -->
+          <div class="sub-panel hidden" id="panel-finance-approval">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">FINANCE VERIFICATION</div>
+                  <h3 class="table-title">Persetujuan Pengajuan Pembelian (Purchase Orders)</h3>
+                  <p class="table-subtitle">Permintaan pembelian dari procurement memerlukan persetujuan tim Finance. Bila disetujui, pembelian dapat dimasukkan ke daftar aktif dan dilaksanakan. Bila ditolak, pengajuan dibatalkan.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-finance-approval">
+                  <thead>
+                    <tr>
+                      <th>NOMOR PO & TANGGAL</th>
+                      <th>SUPPLIER</th>
+                      <th>RINCIAN BARANG & QTY</th>
+                      <th>ESTIMASI TOTAL BIAYA</th>
+                      <th>TIPE PENGAJUAN</th>
+                      <th>CATATAN PROCUREMENT</th>
+                      <th>STATUS PENGAJUAN</th>
+                      <th class="text-right">TINDAKAN FINANCE</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-finance-approval">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 3: HCM & PAYROLL                                          -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-hcm" data-module="hcm">
+          <!-- HCM KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-pegawai">
+              <div class="card-icon-wrapper pegawai-bg">👨‍🍳</div>
+              <div class="card-content">
+                <span class="card-label">Total Pegawai Aktif</span>
+                <h3 class="card-value" id="hcm-total-pegawai">12 Pegawai</h3>
+                <span class="trend-sub">100% Kontrak Valid</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">📅</div>
+              <div class="card-content">
+                <span class="card-label">Tingkat Kehadiran Bln Ini</span>
+                <h3 class="card-value text-safe">96.8%</h3>
+                <span class="trend-sub">Target 24 Hari Kerja</span>
+              </div>
+            </div>
+            <div class="kpi-card card-warning">
+              <div class="card-icon-wrapper warning-bg">⏱️</div>
+              <div class="card-content">
+                <span class="card-label">Total Keterlambatan</span>
+                <h3 class="card-value text-warning">35 Menit</h3>
+                <span class="trend-sub">Dipotong Rp 2.000/mnt</span>
+              </div>
+            </div>
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">💰</div>
+              <div class="card-content">
+                <span class="card-label">Beban Payroll Bulan Ini</span>
+                <h3 class="card-value" id="hcm-total-payroll">Rp 5.030.000</h3>
+                <span class="trend-sub">Slip Gaji Terbit: #1</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchHcmTab('pegawai')">👥 Data Pegawai</button>
+              <button class="sub-tab" onclick="switchHcmTab('absensi')">📋 Rekap Absensi (24 Hari)</button>
+              <button class="sub-tab" onclick="switchHcmTab('slip')">🧾 Generator Slip Gaji (Payslip)</button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-secondary btn-sm" onclick="handleSeedDemoHCM()">🔄 Buat Demo Absensi</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Data Pegawai -->
+          <div class="sub-panel" id="panel-hcm-pegawai">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">HUMAN CAPITAL</div>
+                  <h3 class="table-title">Daftar Karyawan Coffee Shop</h3>
+                  <p class="table-subtitle">Manajemen profil pegawai, jabatan, departemen, dan gaji pokok.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-pegawai">
+                  <thead>
+                    <tr>
+                      <th>KODE & NAMA PEGAWAI</th>
+                      <th>JABATAN</th>
+                      <th>DEPARTEMEN</th>
+                      <th>STATUS KERJA</th>
+                      <th>GAJI POKOK</th>
+                      <th>REKENING TRANSFER</th>
+                      <th class="text-right">AKSI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-pegawai">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Rekap Absensi -->
+          <div class="sub-panel hidden" id="panel-hcm-absensi">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">ATTENDANCE LOG</div>
+                  <h3 class="table-title">Log Kehadiran & Keterlambatan Pegawai</h3>
+                  <p class="table-subtitle">Data absensi harian yang menjadi dasar perhitungan tunjangan kehadiran & potongan denda.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-absensi">
+                  <thead>
+                    <tr>
+                      <th>TANGGAL</th>
+                      <th>NAMA PEGAWAI</th>
+                      <th>SHIFT KERJA</th>
+                      <th>JAM MASUK</th>
+                      <th>STATUS</th>
+                      <th>KETERLAMBATAN</th>
+                      <th>LEMBUR</th>
+                      <th>CATATAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-absensi">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 3: Slip Gaji Payslip Preview -->
+          <div class="sub-panel hidden" id="panel-hcm-slip">
+            <div class="payslip-wrapper">
+              <div class="payslip-box">
+                <div class="payslip-header">
+                  <div class="payslip-brand">
+                    <h2>KAFEINA COFFEE & ROASTERY</h2>
+                    <p>Jl. Senopati Raya No. 88, Kebayoran Baru, Jakarta Selatan</p>
+                  </div>
+                  <div class="payslip-meta">
+                    <span class="payslip-badge">SLIP GAJI RESMI</span>
+                    <h4 id="ps-nomor-slip">SLIP/2026/09/EMP-001</h4>
+                    <span id="ps-periode">Periode: September 2026</span>
+                  </div>
+                </div>
+
+                <div class="payslip-employee-info">
+                  <div class="info-group">
+                    <label>Nama Pegawai:</label>
+                    <strong id="ps-nama">Dimas Pratama</strong>
+                  </div>
+                  <div class="info-group">
+                    <label>Kode Pegawai:</label>
+                    <span id="ps-kode">EMP-001</span>
+                  </div>
+                  <div class="info-group">
+                    <label>Jabatan:</label>
+                    <span id="ps-jabatan">Head Barista</span>
+                  </div>
+                  <div class="info-group">
+                    <label>Rekening Bank:</label>
+                    <span id="ps-bank">BCA • 5270123456</span>
+                  </div>
+                </div>
+
+                <div class="payslip-table-grid">
+                  <!-- Penerimaan -->
+                  <div class="payslip-col">
+                    <h5 class="col-title income">A. PENERIMAAN (EARNINGS)</h5>
+                    <div class="line-item">
+                      <span>Gaji Pokok (Head Barista)</span>
+                      <strong id="ps-gaji-pokok">Rp 4.500.000</strong>
+                    </div>
+                    <div class="line-item">
+                      <span>Tunjangan Kehadiran (24/24 hari)</span>
+                      <strong id="ps-tunjangan">Rp 500.000</strong>
+                    </div>
+                    <div class="line-item">
+                      <span>Upah Lembur (4 Jam @ Rp 25.000)</span>
+                      <strong id="ps-lembur">Rp 100.000</strong>
+                    </div>
+                    <div class="line-total income">
+                      <span>Total Penerimaan Bruto</span>
+                      <strong id="ps-total-bruto">Rp 5.100.000</strong>
+                    </div>
+                  </div>
+
+                  <!-- Potongan -->
+                  <div class="payslip-col">
+                    <h5 class="col-title deduction">B. POTONGAN (DEDUCTIONS)</h5>
+                    <div class="line-item">
+                      <span>Potongan Terlambat (35 mnt @ Rp 2.000)</span>
+                      <strong class="text-danger" id="ps-potongan-telat">- Rp 70.000</strong>
+                    </div>
+                    <div class="line-item">
+                      <span>Iuran BPJS Ketenagakerjaan</span>
+                      <strong class="text-danger">Rp 0</strong>
+                    </div>
+                    <div class="line-total deduction">
+                      <span>Total Potongan</span>
+                      <strong class="text-danger" id="ps-total-potongan">- Rp 70.000</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Grand Total -->
+                <div class="payslip-net-box">
+                  <div class="net-title">
+                    <span>GAJI BERSIH (TAKE HOME PAY):</span>
+                    <h2 id="ps-gaji-bersih">Rp 5.030.000</h2>
+                  </div>
+                  <div class="terbilang-box">
+                    <span>Terbilang:</span>
+                    <em id="ps-terbilang">"Lima Juta Tiga Puluh Ribu Rupiah"</em>
+                  </div>
+                </div>
+
+                <div class="payslip-footer">
+                  <button class="btn btn-primary" onclick="handleKalkulasiPayroll(1)">⚡ Hitung Ulang Payroll Pegawai Ini</button>
+                  <button class="btn btn-secondary" onclick="window.print()">🖨️ Cetak Slip Gaji</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 4: PROCUREMENT & PURCHASE ORDERS (PO)                     -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-procurement" data-module="procurement">
+          <!-- Procurement KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">📑</div>
+              <div class="card-content">
+                <span class="card-label">Total Purchase Order</span>
+                <h3 class="card-value" id="proc-total-po">0 PO</h3>
+                <span class="trend-sub">Diterbitkan ke supplier</span>
+              </div>
+            </div>
+            <div class="kpi-card card-warning">
+              <div class="card-icon-wrapper warning-bg">⏳</div>
+              <div class="card-content">
+                <span class="card-label">PO Menunggu Terima</span>
+                <h3 class="card-value text-warning" id="proc-pending-po">0 Draf/Order</h3>
+                <span class="trend-sub">Menunggu Pengiriman</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">🤝</div>
+              <div class="card-content">
+                <span class="card-label">Supplier Rekanan</span>
+                <h3 class="card-value" id="proc-total-supplier">3 Rekanan</h3>
+                <span class="trend-sub">Roastery, Dairy, Syrup</span>
+              </div>
+            </div>
+            <div class="kpi-card card-pegawai">
+              <div class="card-icon-wrapper pegawai-bg">📦</div>
+              <div class="card-content">
+                <span class="card-label">Metode HPP Persediaan</span>
+                <h3 class="card-value text-safe">Moving Average</h3>
+                <span class="trend-sub">Otomatis saat GRN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchProcurementTab('po')">📜 Daftar Purchase Order (PO)</button>
+              <button class="sub-tab" onclick="switchProcurementTab('supplier')">🏢 Data Supplier Rekanan</button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-po')">+ Ajukan Pembelian ke Finance</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Daftar PO -->
+          <div class="sub-panel" id="panel-procurement-po">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">PROCUREMENT & APPROVAL LOG</div>
+                  <h3 class="table-title">Daftar Pengadaan Bahan Baku (PO)</h3>
+                  <p class="table-subtitle">Pengajuan pembelian bahan baku ke Finance. Setelah disetujui Finance, pembelian aktif dalam daftar &amp; dapat dilaksanakan (terima barang). Jika ditolak, pengajuan dibatalkan.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-po">
+                  <thead>
+                    <tr>
+                      <th>NOMOR PO & TANGGAL</th>
+                      <th>SUPPLIER</th>
+                      <th>KOMODITAS & JUMLAH</th>
+                      <th>TOTAL ESTIMASI BIAYA</th>
+                      <th>TIPE PENERBITAN</th>
+                      <th>STATUS PO</th>
+                      <th class="text-right">TINDAKAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-po">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Supplier Rekanan -->
+          <div class="sub-panel hidden" id="panel-procurement-supplier">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">VENDOR LIST</div>
+                  <h3 class="table-title">Daftar Supplier Resmi</h3>
+                  <p class="table-subtitle">Mitra pemasok biji kopi sangrai (roastery), susu segar, sirup perisa, dan kemasan.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-supplier">
+                  <thead>
+                    <tr>
+                      <th>NAMA SUPPLIER</th>
+                      <th>CONTACT PERSON</th>
+                      <th>NO. TELEPON</th>
+                      <th>EMAIL</th>
+                      <th>ALAMAT GUDANG</th>
+                      <th>KOMODITAS UTAMA</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-supplier">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 5: INVENTORY & STOCK MANAGEMENT                           -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-inventory" data-module="inventory">
+          <!-- Inventory KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">📦</div>
+              <div class="card-content">
+                <span class="card-label">Total Jenis Komoditas</span>
+                <h3 class="card-value" id="inv-total-sku">6 SKU</h3>
+                <span class="trend-sub">Beans, Dairy, Syrup, Pack</span>
+              </div>
+            </div>
+            <div class="kpi-card card-warning">
+              <div class="card-icon-wrapper warning-bg">⚠️</div>
+              <div class="card-content">
+                <span class="card-label">Bahan Perlu Reorder</span>
+                <h3 class="card-value text-warning" id="inv-reorder-count">3 Item</h3>
+                <span class="trend-sub">&le; Batas Safety Stock</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">💎</div>
+              <div class="card-content">
+                <span class="card-label">Total Nilai Persediaan</span>
+                <h3 class="card-value" id="inv-total-nilai">Rp 14.850.000</h3>
+                <span class="trend-sub">Dihitung dari HPP Rata-rata</span>
+              </div>
+            </div>
+            <div class="kpi-card card-pegawai">
+              <div class="card-icon-wrapper pegawai-bg">🔄</div>
+              <div class="card-content">
+                <span class="card-label">Auto-Trigger PO</span>
+                <h3 class="card-value text-safe">AKTIF</h3>
+                <span class="trend-sub">Otomatis buat draf PO</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchInventoryTab('stock')">⚠️ Safety Stock Warning & Reorder</button>
+              <button class="sub-tab" onclick="switchInventoryTab('mutasi')">📜 Riwayat Mutasi Stok (Kartu Stok)</button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openModal('modal-mutasi')">- Catat Pemakaian (Out)</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Safety Stock Warning -->
+          <div class="sub-panel" id="panel-inventory-stock">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">INVENTORY ALERT</div>
+                  <h3 class="table-title">Daftar Peringatan Safety Stock Bahan Baku</h3>
+                  <p class="table-subtitle">Barang yang stok fisiknya telah berada di bawah batas minimum dan harus segera dipesan ke supplier.</p>
+                </div>
+
+                <div class="table-actions">
+                  <div class="search-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Cari bahan atau kode...">
+                  </div>
+
+                  <select id="filter-kategori" class="filter-select">
+                    <option value="ALL">Semua Kategori</option>
+                    <option value="Coffee Beans">Coffee Beans</option>
+                    <option value="Dairy">Dairy & Milk</option>
+                    <option value="Syrup">Syrups & Sauces</option>
+                    <option value="Packaging">Packaging</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Table Container -->
+              <div class="table-responsive">
+                <table class="modern-table" id="table-safety-stock">
+                  <thead>
+                    <tr>
+                      <th>KODE & NAMA BARANG</th>
+                      <th>KATEGORI</th>
+                      <th>STOK SAAT INI</th>
+                      <th>BATAS SAFETY</th>
+                      <th>STATUS PERSEDIAAN</th>
+                      <th>ESTIMASI REORDER</th>
+                      <th class="text-right">TINDAKAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-stock">
+                    <!-- Data di-render dinamis oleh app.js via fetch API -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="table-footer">
+                <div class="table-meta" id="table-meta-info">Menampilkan data...</div>
+                <div class="table-legend">
+                  <span class="legend-item"><span class="legend-dot critical"></span> Kritis (&le; 50% Safety)</span>
+                  <span class="legend-item"><span class="legend-dot warning"></span> Perlu Reorder (&le; Safety)</span>
+                  <span class="legend-item"><span class="legend-dot safe"></span> Aman</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Riwayat Mutasi Stok -->
+          <div class="sub-panel hidden" id="panel-inventory-mutasi">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">STOCK MUTATION</div>
+                  <h3 class="table-title">Riwayat Mutasi Persediaan (Kartu Stok Terintegrasi)</h3>
+                  <p class="table-subtitle">Pencatatan real-time seluruh barang masuk dari PO supplier dan barang keluar pemakaian operasional.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-mutasi">
+                  <thead>
+                    <tr>
+                      <th>WAKTU MUTASI</th>
+                      <th>NAMA BAHAN BAKU</th>
+                      <th>TIPE MUTASI</th>
+                      <th>MASUK</th>
+                      <th>KELUAR</th>
+                      <th>SALDO AKHIR</th>
+                      <th>REFERENSI / KETERANGAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-mutasi">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- 3. MODAL DIALOGS INTERAKTIF                                    -->
+  <!-- ============================================================== -->
+
+  <!-- Modal Buat PO -->
+  <div class="modal-backdrop" id="modal-po">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📦 Ajukan Pembelian Bahan Baku (PO ke Finance)</h3>
+        <button class="modal-close" onclick="closeModal('modal-po')">&times;</button>
+      </div>
+      <form id="form-create-po" onsubmit="submitCreatePo(event)">
+        <div style="background: var(--green-sage-bg); border-left: 4px solid var(--green-deep); padding: 10px 14px; margin-bottom: 16px; border-radius: 6px; font-size: 0.83rem; line-height: 1.45; color: var(--text-heading);">
+          ℹ️ <strong>Alur Otorisasi:</strong> Pengajuan ini akan otomatis masuk ke <strong>Modul Finance</strong> untuk diverifikasi &amp; disetujui. Setelah disetujui Finance, pembelian aktif dan dapat dilaksanakan.
+        </div>
+        <div class="form-group">
+          <label>Pilih Supplier Rekanan</label>
+          <select id="po-supplier-select" class="form-control" required>
+            <option value="1">CV Nusantara Coffee Roastery (Kopi)</option>
+            <option value="2">PT Sumber Dairy Sejahtera (Susu)</option>
+            <option value="3">Distributor Sirup Premium (Sirup)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Bahan Baku yang Dipesan</label>
+          <select id="po-barang-select" class="form-control" required>
+            <option value="1">Arabica House Blend 70/30 (gr)</option>
+            <option value="2">Greenfields Fresh Milk Pasteurized (ml)</option>
+            <option value="3">Monin Salted Caramel Syrup (ml)</option>
+            <option value="5">Hot Paper Cup 8oz + Lid (pcs)</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Jumlah Pesan</label>
+            <input type="number" id="po-jumlah-input" class="form-control" placeholder="Contoh: 5000" required min="1">
+          </div>
+          <div class="form-group">
+            <label>Estimasi Harga Satuan (Rp)</label>
+            <input type="number" id="po-harga-input" class="form-control" placeholder="Contoh: 300" required min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan / Alasan Pengadaan</label>
+          <textarea id="po-catatan-input" class="form-control" rows="2" placeholder="Pesanan reguler stok mingguan..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-po')">Batal</button>
+          <button type="submit" class="btn btn-primary">Kirim Pengajuan ke Finance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Setujui Pembelian (Finance Approval) -->
+  <div class="modal-backdrop" id="modal-finance-approve">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✓ Persetujuan Pembelian Bahan Baku</h3>
+        <button class="modal-close" onclick="closeModal('modal-finance-approve')">&times;</button>
+      </div>
+      <form id="form-finance-approve" onsubmit="submitFinanceApprove(event)">
+        <input type="hidden" id="fa-po-id">
+        <div id="approve-po-summary" style="background: var(--green-sage-bg); border: 1px solid var(--border-highlight); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: var(--text-heading);">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-group">
+          <label>Disetujui Oleh (Staf/Manajer Finance)</label>
+          <input type="text" id="fa-disetujui-oleh" class="form-control" value="Finance Manager" required>
+        </div>
+        <div class="form-group">
+          <label>Catatan / Rekomendasi Finance (Opsional)</label>
+          <textarea id="fa-catatan" class="form-control" rows="2" placeholder="Anggaran pengadaan disetujui. Lanjutkan pemesanan ke vendor..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-finance-approve')">Batal</button>
+          <button type="submit" class="btn btn-primary" style="background: var(--green-deep);">Setujui &amp; Aktifkan Pembelian</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tolak Pengajuan Pembelian (Finance Rejection) -->
+  <div class="modal-backdrop" id="modal-finance-reject">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="color: #dc2626;">✗ Tolak Pengajuan Pembelian (Batal)</h3>
+        <button class="modal-close" onclick="closeModal('modal-finance-reject')">&times;</button>
+      </div>
+      <form id="form-finance-reject" onsubmit="submitFinanceReject(event)">
+        <input type="hidden" id="fr-po-id">
+        <div id="reject-po-summary" style="background: #fee2e2; border: 1px solid #fca5a5; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: #7f1d1d;">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-group">
+          <label>Ditolak Oleh (Staf/Manajer Finance)</label>
+          <input type="text" id="fr-ditolak-oleh" class="form-control" value="Finance Manager" required>
+        </div>
+        <div class="form-group">
+          <label>Alasan Penolakan (Wajib Diisi)</label>
+          <textarea id="fr-alasan" class="form-control" rows="3" placeholder="Sebutkan alasan penolakan anggaran (misal: kuota belanja bulanan telah habis, atau gunakan stok cabang lain)..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-finance-reject')">Kembali</button>
+          <button type="submit" class="btn" style="background: #dc2626; color: #ffffff; font-weight: 700;">Tolak &amp; Batalkan Pengajuan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Jurnal Manual -->
+  <div class="modal-backdrop" id="modal-jurnal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>⚖️ Input Jurnal Umum Manual</h3>
+        <button class="modal-close" onclick="closeModal('modal-jurnal')">&times;</button>
+      </div>
+      <form id="form-create-jurnal" onsubmit="submitCreateJurnal(event)">
+        <div class="form-group">
+          <label>Keterangan Transaksi</label>
+          <input type="text" id="jm-keterangan" class="form-control" placeholder="Contoh: Pembayaran listrik & internet outlet" required>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Akun Debet</label>
+            <select id="jm-akun-debet" class="form-control" required>
+              <option value="9">6-1002 - Beban Operasional Kas Kecil</option>
+              <option value="7">5-1001 - Beban Pokok Penjualan (HPP)</option>
+              <option value="3">1-1020 - Persediaan Bahan Baku</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Akun Kredit</label>
+            <select id="jm-akun-kredit" class="form-control" required>
+              <option value="1">1-1001 - Kas Toko / Kasir</option>
+              <option value="2">1-1002 - Bank BCA Operasional</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nominal Transaksi (Rp)</label>
+          <input type="number" id="jm-nominal" class="form-control" placeholder="Contoh: 450000" required min="1000">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-jurnal')">Batal</button>
+          <button type="submit" class="btn btn-primary">Posting Jurnal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Catat Mutasi Keluar -->
+  <div class="modal-backdrop" id="modal-mutasi">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📉 Catat Pemakaian Bahan Baku (Mutasi Keluar)</h3>
+        <button class="modal-close" onclick="closeModal('modal-mutasi')">&times;</button>
+      </div>
+      <form id="form-create-mutasi" onsubmit="submitCreateMutasi(event)">
+        <div class="form-group">
+          <label>Pilih Bahan Baku</label>
+          <select id="mut-barang-select" class="form-control" required>
+            <option value="1">Arabica House Blend 70/30 (gr)</option>
+            <option value="2">Greenfields Fresh Milk (ml)</option>
+            <option value="3">Monin Salted Caramel Syrup (ml)</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Jumlah Keluar</label>
+            <input type="number" id="mut-jumlah-input" class="form-control" placeholder="Contoh: 500" required min="1">
+          </div>
+          <div class="form-group">
+            <label>Tipe Mutasi</label>
+            <select id="mut-tipe-select" class="form-control" required>
+              <option value="OUT_SALES_POS">Pemakaian Kasir (Penjualan Kopi)</option>
+              <option value="OUT_WASTE">Waste / Biji Kopi Rusak / Kalibrasi</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Keterangan</label>
+          <input type="text" id="mut-keterangan-input" class="form-control" placeholder="Contoh: Pemakaian shift siang">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mutasi')">Batal</button>
+          <button type="submit" class="btn btn-primary">Catat Pemakaian</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JavaScript App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

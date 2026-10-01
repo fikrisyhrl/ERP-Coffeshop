@@ -1,0 +1,237 @@
+### TEST SUITE ERP COFFEE SHOP: INVENTORY & PROCUREMENT INTEGRATION
+@baseUrl = http://localhost:5000/api
+
+### ==========================================================================
+### 1. SEED DATA AWAL: SUPPLIER & BARANG
+### ==========================================================================
+
+### 1.1 Buat Supplier (Roastery Kopi)
+POST {{baseUrl}}/procurement/supplier
+Content-Type: application/json
+
+{
+  "nama_supplier": "CV Nusantara Coffee Roastery",
+  "kontak_person": "Budi Santoso",
+  "telepon": "08123456789",
+  "email": "order@nusantararoastery.com",
+  "alamat": "Jl. Raya Kopi No. 45, Bandung"
+}
+
+### 1.2 Buat Master Barang (Biji Kopi House Blend)
+# Batas safety stock diset 2000 gr (2 kg).
+POST {{baseUrl}}/barang
+Content-Type: application/json
+
+{
+  "nama_barang": "Arabica House Blend 70/30",
+  "kategori": "Coffee Beans",
+  "satuan": "gr",
+  "harga_satuan": 300.00,
+  "batas_safety_stock": 2000.00
+}
+
+
+### ==========================================================================
+### 2. PENGUJIAN FITUR 1: MUTASI KELUAR & AUTO-DRAFT PO (SAFETY STOCK TRIGGER)
+### ==========================================================================
+
+### 2.1 Simulasi Penjualan Kopi di POS (Pemakaian 500 gr kopi)
+# Jika stok saat ini <= 2000 gr, sistem akan otomatis menerbitkan Draf PO ke tabel Procurement.
+POST {{baseUrl}}/inventory/mutasi-keluar
+Content-Type: application/json
+
+{
+  "id_barang": 1,
+  "jumlah_keluar": 500,
+  "tipe_mutasi": "OUT_SALES_POS",
+  "referensi_tipe": "POS_ORDER",
+  "referensi_id": 101,
+  "keterangan": "Pemakaian espresso beans 25 cups latte"
+}
+
+### 2.2 Cek Riwayat Kartu Stok Barang
+GET {{baseUrl}}/inventory/kartu-stok/1
+
+### 2.3 Cek Daftar PO di Modul Procurement (Lihat status: PENDING_APPROVAL)
+GET {{baseUrl}}/procurement/po?status=PENDING_APPROVAL
+
+### 2.4 Cek Antrean Pengajuan Pembelian yang Masuk ke Modul Finance
+# Tim Finance melihat daftar permintaan pengadaan yang menunggu persetujuan
+GET {{baseUrl}}/finance/pengajuan-po
+
+
+### ==========================================================================
+### 3. PENGUJIAN OTORISASI FINANCE & EKSEKUSI PEMBELIAN (GOODS RECEIPT)
+### ==========================================================================
+
+### 3.1 VALIDASI SISTEM: Coba Terima Barang Sebelum Disetujui Finance
+# Sistem HARUS MENOLAK dengan error bahwa PO masih MENUNGGU PERSETUJUAN Finance
+POST {{baseUrl}}/procurement/terima-barang
+Content-Type: application/json
+
+{
+  "po_id": 1,
+  "nomor_surat_jalan": "SJ/TEST/EARLY",
+  "diterima_oleh": "Barista",
+  "items": [{ "po_item_id": 1, "id_barang": 1, "jumlah_diterima": 1000, "harga_beli_satuan": 350 }]
+}
+
+### 3.2 Tim Finance Menyetujui Pengajuan Pembelian (Ubah PENDING_APPROVAL -> CONFIRMED)
+# Setelah disetujui, pembelian resmi masuk ke list aktif dan dapat dilaksanakan
+PATCH {{baseUrl}}/finance/pengajuan-po/1/setujui
+Content-Type: application/json
+
+{
+  "disetujui_oleh": "Finance Manager Fikri",
+  "catatan_finance": "Anggaran belanja bahan baku disetujui. Silakan pesan ke vendor."
+}
+
+### 3.3 Terima Barang dari Vendor setelah Disetujui (Goods Receipt / GRN)
+# Skenario:
+# - Stok lama: misal 1.500 gr dengan HPP Rp 300/gr (Total nilai = Rp 450.000)
+# - Datang barang baru: 4.000 gr dengan harga beli faktur Rp 350/gr (Total nilai = Rp 1.400.000)
+# - Hasil Kalkulasi HPP Moving Average:
+#   (Rp 450.000 + Rp 1.400.000) / (1.500 gr + 4.000 gr) = Rp 1.850.000 / 5.500 gr = Rp 336.36/gr
+POST {{baseUrl}}/procurement/terima-barang
+Content-Type: application/json
+
+{
+  "po_id": 1,
+  "nomor_surat_jalan": "SJ/ROASTERY/2026/099",
+  "diterima_oleh": "Head Barista Fikri",
+  "catatan": "Kopi diterima kemasan valve utuh, roast date 2 hari lalu",
+  "items": [
+    {
+      "po_item_id": 1,
+      "id_barang": 1,
+      "jumlah_diterima": 4000,
+      "harga_beli_satuan": 350.00,
+      "batch_number": "BATCH-202609-01",
+      "tanggal_kadaluarsa": "2027-03-28"
+    }
+  ]
+}
+
+### 3.4 UJI COBA PENOLAKAN FINANCE: Buat PO Baru lalu Tolak Pengajuan
+# 3.4.1 Procurement mengajukan PO baru
+POST {{baseUrl}}/procurement/po
+Content-Type: application/json
+
+{
+  "supplier_id": 1,
+  "catatan": "Pengajuan pembelian biji kopi tambahan",
+  "items": [{ "id_barang": 1, "jumlah_pesan": 10000, "harga_satuan_estimasi": 350 }]
+}
+
+### 3.4.2 Finance Menolak Pengajuan Pembelian (Ubah PENDING_APPROVAL -> REJECTED)
+# Ganti angka 2 dengan id_po yang baru terbentuk jika berbeda
+PATCH {{baseUrl}}/finance/pengajuan-po/2/tolak
+Content-Type: application/json
+
+{
+  "ditolak_oleh": "Finance Manager Fikri",
+  "alasan_penolakan": "Kuota belanja bulan ini sudah mencapai pagu anggaran. Pengajuan dibatalkan."
+}
+
+### 3.5 Verifikasi Hasil Akhir: Cek Stok Baru & HPP Baru di Master Barang
+GET {{baseUrl}}/barang/1
+
+### 3.6 Verifikasi Kartu Stok Setelah Barang Diterima
+GET {{baseUrl}}/inventory/kartu-stok/1
+
+
+### ==========================================================================
+### 4. PENGUJIAN FITUR HCM & PAYROLL OTOMATIS
+### ==========================================================================
+
+### 4.1 Generate Data Demo HCM (Jabatan, Pegawai, & 24 Hari Absensi September 2026)
+# Membuat Head Barista (Gaji Rp 4.500.000), 24 hari absensi (21 hari tepat waktu, 3x telat total 35 menit, 4 jam lembur)
+POST {{baseUrl}}/hcm/payroll/seed-demo
+
+### 4.2 Hitung Payroll Otomatis (Generate Slip Gaji Pegawai ID 1)
+# Skenario:
+# - Gaji Pokok: Rp 4.500.000 (berdasarkan jabatan Head Barista)
+# - Target hari masuk: 24 hari (terpenuhi -> dapat Tunjangan Kehadiran Rp 500.000)
+# - Keterlambatan: 35 menit x Rp 2.000/menit = Potongan Rp 70.000
+# - Lembur: 4 jam x Rp 25.000/jam = Bonus Rp 100.000
+# - Gaji Bersih (Take Home Pay): Rp 4.500.000 + Rp 500.000 + Rp 100.000 - Rp 70.000 = Rp 5.030.000
+POST {{baseUrl}}/hcm/payroll/hitung/1
+Content-Type: application/json
+
+{
+  "bulan": 9,
+  "tahun": 2026,
+  "target_hari_kerja": 24,
+  "nominal_tunjangan_kehadiran": 500000,
+  "tarif_potongan_per_menit": 2000,
+  "tarif_lembur_per_jam": 25000
+}
+
+### 4.3 Ambil Detail Slip Gaji yang Tersimpan di Database
+GET {{baseUrl}}/hcm/payroll/slip/1
+
+
+### ==========================================================================
+### 5. PENGUJIAN MODUL FINANCE & ACCOUNTING: JURNAL OTOMATIS (DOUBLE-ENTRY)
+### ==========================================================================
+
+### 5.1 Inisialisasi Chart of Accounts (CoA) Standar Coffee Shop
+POST {{baseUrl}}/finance/seed-coa
+
+### 5.2 Lihat Daftar Bagan Akun (Chart of Accounts)
+GET {{baseUrl}}/finance/coa
+
+### 5.3 SKENARIO 1: Pencatatan Jurnal Pembayaran Gaji Karyawan (Payroll)
+# Kondisi:
+# - Debet : Beban Gaji & Upah (Akun 6-1001) bertambah
+# - Kredit: Bank BCA Operasional (Akun 1-1002) berkurang
+# - Status slip gaji otomatis berubah menjadi 'PAID'
+POST {{baseUrl}}/finance/jurnal/payroll
+Content-Type: application/json
+
+{
+  "payroll_id": 1,
+  "tanggal_bayar": "2026-09-30"
+}
+
+### 5.4 SKENARIO 2: Pencatatan Jurnal Pembelian Bahan Baku Tunai (Procurement Cash)
+# Kondisi:
+# - Debet : Persediaan Bahan Baku (Akun 1-1020) bertambah (Rp 750.000)
+# - Kredit: Kas Toko / Kasir (Akun 1-1001) berkurang (Rp 750.000)
+# - Sekaligus menambah kuantitas stok di tabel Inventory (+2.500 gr kopi) & menghitung HPP baru
+POST {{baseUrl}}/finance/jurnal/pembelian-tunai
+Content-Type: application/json
+
+{
+  "id_barang": 1,
+  "jumlah_beli": 2500,
+  "harga_satuan_beli": 300.00,
+  "keterangan": "Beli biji kopi arabica tambahan secara tunai dari kas toko"
+}
+
+### 5.5 PENGUJIAN VALIDASI: Uji Coba Penolakan Jurnal Tidak Seimbang (Debet != Kredit)
+# Sistem HARUS menolak dan melempar error HTTP 400/500 jika Debet (Rp 1.000.000) != Kredit (Rp 800.000)
+POST {{baseUrl}}/finance/jurnal/manual
+Content-Type: application/json
+
+{
+  "keterangan": "Uji coba transaksi tidak seimbang",
+  "lines": [
+    {
+      "akun_id": 1,
+      "debet": 1000000,
+      "kredit": 0,
+      "catatan": "Debet 1 juta"
+    },
+    {
+      "akun_id": 2,
+      "debet": 0,
+      "kredit": 800000,
+      "catatan": "Kredit hanya 800 ribu (sengaja salah)"
+    }
+  ]
+}
+
+### 5.6 Lihat Seluruh Buku Jurnal Umum (General Ledger)
+GET {{baseUrl}}/finance/jurnal
+
