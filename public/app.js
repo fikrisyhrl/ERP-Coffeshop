@@ -1024,6 +1024,205 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInput) searchInput.addEventListener('input', applyInventoryFilter);
   if (filterKategori) filterKategori.addEventListener('change', applyInventoryFilter);
 
+  // Expose Data Loaders to window for realtime access
+  window.loadDashboardData = loadDashboardData;
+  window.loadFinanceData = loadFinanceData;
+  window.loadHcmData = loadHcmData;
+  window.loadProcurementData = loadProcurementData;
+  window.loadInventoryData = loadInventoryData;
+
+  // ==============================================================
+  // REALTIME SYNCHRONIZATION ENGINE (Cross-Tab, Heartbeat & Event Bus)
+  // ==============================================================
+  const REALTIME_CHANNEL_NAME = 'kafeina_erp_realtime_bus';
+  let realtimeChannel = null;
+  try {
+    if (typeof BroadcastChannel !== 'undefined') {
+      realtimeChannel = new BroadcastChannel(REALTIME_CHANNEL_NAME);
+    }
+  } catch (err) {
+    console.warn('BroadcastChannel tidak didukung di environment ini:', err);
+  }
+
+  // Efek visual indikator sinkronisasi realtime live di topbar
+  window.flashSyncIndicator = (statusText = 'Tersinkronisasi ✓') => {
+    const indicator = document.getElementById('live-sync-indicator');
+    const textEl = document.getElementById('live-sync-text');
+    if (!indicator || !textEl) return;
+
+    indicator.classList.add('syncing');
+    textEl.textContent = statusText;
+
+    setTimeout(() => {
+      indicator.classList.remove('syncing');
+      textEl.textContent = 'Realtime Live';
+    }, 1000);
+  };
+
+  // Sinkronisasi badge notifikasi global (Alert Stok, PO menunggu approval Finance, KPI)
+  window.updateGlobalBadgesSilently = async () => {
+    try {
+      // 1. Alert Stok Rendah & KPI Stok
+      const resB = await fetch('/api/barang');
+      const dataB = await resB.json();
+      if (dataB.success && Array.isArray(dataB.data)) {
+        inventoryItems = dataB.data;
+        const warningItems = inventoryItems.filter(
+          (item) => parseFloat(item.stok_saat_ini) <= parseFloat(item.batas_safety_stock)
+        );
+        const badgeStok = document.getElementById('badge-stok-alert');
+        if (badgeStok) badgeStok.textContent = `${warningItems.length} Alert`;
+        const kpiStok = document.getElementById('kpi-stok-warning-count');
+        if (kpiStok) kpiStok.textContent = `${warningItems.length} Komoditas`;
+      }
+    } catch {}
+
+    try {
+      // 2. Pending Approval PO Finance & Procurement KPI
+      const resPo = await fetch('/api/procurement/po');
+      const dataPo = await resPo.json();
+      if (dataPo.success && Array.isArray(dataPo.data)) {
+        purchaseOrders = dataPo.data;
+        const pendingApprovals = purchaseOrders.filter((p) => p.status === 'PENDING_APPROVAL');
+        const badgeApproval = document.getElementById('fin-pending-badge');
+        if (badgeApproval) {
+          badgeApproval.textContent = pendingApprovals.length;
+          if (pendingApprovals.length === 0) badgeApproval.classList.add('badge-zero');
+          else badgeApproval.classList.remove('badge-zero');
+        }
+        const procPending = document.getElementById('proc-pending-po');
+        if (procPending) procPending.textContent = `${pendingApprovals.length} Menunggu Finance`;
+        const procTotal = document.getElementById('proc-total-po');
+        if (procTotal) procTotal.textContent = `${purchaseOrders.length} PO`;
+      }
+    } catch {}
+  };
+
+  // Muat data aktif secara senyap tanpa merusak fokus atau interaksi formulir pengguna
+  window.refreshActiveDataSilently = async (reason = 'auto') => {
+    const activeEl = document.activeElement;
+    const isTyping = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+    const hasModalOpen = document.querySelector('.modal.active');
+
+    // Selalu perbarui badge global
+    await updateGlobalBadgesSilently();
+
+    // Jika pengguna sedang mengetik di input atau ada modal terbuka, tunda redraw tabel utama
+    if (isTyping || hasModalOpen) {
+      return;
+    }
+
+    try {
+      switch (currentModule) {
+        case 'dashboard':
+          await loadDashboardData();
+          break;
+        case 'finance':
+          await loadFinanceData();
+          break;
+        case 'procurement':
+          await loadProcurementData();
+          break;
+        case 'inventory':
+          await loadInventoryData();
+          break;
+        case 'hcm':
+          await loadHcmData();
+          break;
+        case 'users':
+          if (typeof window.loadUsersData === 'function') {
+            await window.loadUsersData();
+          }
+          break;
+      }
+    } catch (err) {
+      console.warn('Realtime silent refresh error:', err);
+    }
+  };
+
+  // Trigger Realtime: Dipanggil seketika saat ada data diinput/diubah/dihapus di seluruh modul
+  window.triggerRealtimeUpdate = async (reason = 'mutation') => {
+    flashSyncIndicator('Menyinkronkan...');
+
+    // 1. Segarkan tampilan aktif seketika
+    await refreshActiveDataSilently(reason);
+
+    // 2. Segarkan modul lain yang terpengaruh di latar belakang
+    if (['create_po', 'ajukan_finance', 'finance_approve', 'finance_reject'].includes(reason)) {
+      if (currentModule !== 'procurement') loadProcurementData();
+      if (currentModule !== 'finance') loadFinanceData();
+    }
+    if (reason === 'terima_barang') {
+      if (currentModule !== 'inventory') loadInventoryData();
+      if (currentModule !== 'procurement') loadProcurementData();
+      if (currentModule !== 'dashboard') loadDashboardData();
+    }
+    if (reason === 'create_mutasi') {
+      if (currentModule !== 'inventory') loadInventoryData();
+      if (currentModule !== 'dashboard') loadDashboardData();
+    }
+    if (reason === 'create_jurnal') {
+      if (currentModule !== 'finance') loadFinanceData();
+      if (currentModule !== 'dashboard') loadDashboardData();
+    }
+    if (['create_user', 'edit_user', 'delete_user', 'auth_register'].includes(reason)) {
+      if (currentModule !== 'users' && typeof window.loadUsersData === 'function') {
+        window.loadUsersData();
+      }
+    }
+
+    // 3. Broadcast ke seluruh tab / jendela lain secara instan via BroadcastChannel
+    if (realtimeChannel) {
+      try {
+        realtimeChannel.postMessage({
+          type: 'ERP_REALTIME_SYNC',
+          reason: reason,
+          timestamp: Date.now()
+        });
+      } catch (err) {
+        console.warn('BroadcastChannel post error:', err);
+      }
+    }
+
+    // 4. Ping localStorage sebagai fallback antar-tab
+    try {
+      localStorage.setItem('kafeina_erp_realtime_ping', JSON.stringify({ reason, timestamp: Date.now() }));
+    } catch {}
+
+    flashSyncIndicator('Tersinkronisasi ✓');
+  };
+
+  // Listener pesan realtime dari tab lain via BroadcastChannel
+  if (realtimeChannel) {
+    realtimeChannel.onmessage = async (e) => {
+      if (e.data && e.data.type === 'ERP_REALTIME_SYNC') {
+        flashSyncIndicator('Data Diperbarui ✓');
+        await refreshActiveDataSilently(e.data.reason || 'broadcast_sync');
+      }
+    };
+  }
+
+  // Listener fallback via Storage Event (Cross-Tab)
+  window.addEventListener('storage', async (e) => {
+    if (e.key === 'kafeina_erp_realtime_ping' && e.newValue) {
+      try {
+        const ping = JSON.parse(e.newValue);
+        flashSyncIndicator('Data Diperbarui ✓');
+        await refreshActiveDataSilently(ping.reason || 'storage_sync');
+      } catch {}
+    }
+  });
+
+  // Background Heartbeat Poller setiap 4 detik (menangkap pembaruan otomatis dari DB/server)
+  let realtimeHeartbeatInterval = null;
+  const startRealtimeHeartbeat = () => {
+    if (realtimeHeartbeatInterval) clearInterval(realtimeHeartbeatInterval);
+    realtimeHeartbeatInterval = setInterval(async () => {
+      await refreshActiveDataSilently('heartbeat');
+    }, 4000);
+  };
+  startRealtimeHeartbeat();
+
   // ==============================================================
   // 7. MODAL HELPERS & ACTIONS
   // ==============================================================
@@ -1075,8 +1274,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(`✓ Permintaan pembelian untuk ${namaBarang} masuk ke Modul Finance (Menunggu Persetujuan)!`, 'success');
     }
 
-    loadProcurementData();
-    loadFinanceData();
+    await triggerRealtimeUpdate('create_po');
   };
 
   // Submit Modal Pengajuan PO Baru ke Finance
@@ -1128,8 +1326,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(`✓ Pengajuan PO #${newPo.nomor_po} berhasil masuk ke Modul Finance untuk disetujui!`, 'success');
     }
 
-    loadProcurementData();
-    loadFinanceData();
+    await triggerRealtimeUpdate('create_po');
   };
 
   // Ajukan Draf PO ke Finance
@@ -1146,8 +1343,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (po) po.status = 'PENDING_APPROVAL';
       showToast(`✓ PO #${poId} berhasil diajukan ke Modul Finance!`, 'success');
     }
-    loadProcurementData();
-    loadFinanceData();
+    await triggerRealtimeUpdate('ajukan_finance');
   };
 
   // Buka Modal Persetujuan Finance
@@ -1208,8 +1404,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(`✓ PO #${po?.nomor_po || poId} DISETUJUI Finance! Pembelian aktif dan siap dilaksanakan.`, 'success');
     }
 
-    loadFinanceData();
-    loadProcurementData();
+    await triggerRealtimeUpdate('finance_approve');
   };
 
   // Buka Modal Penolakan Finance
@@ -1269,8 +1464,7 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast(`✗ Pengajuan PO #${po?.nomor_po || poId} DITOLAK oleh Finance (Pengajuan Dibatalkan).`, 'warning');
     }
 
-    loadFinanceData();
-    loadProcurementData();
+    await triggerRealtimeUpdate('finance_reject');
   };
 
   // Konfirmasi PO (kompatibilitas mundur)
@@ -1304,8 +1498,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (data.success) {
         showToast(`✓ Barang diterima! HPP baru: Rp ${data.data?.rincian_barang?.[0]?.hpp_rata_rata_baru || harga}`, 'success');
-        loadProcurementData();
-        loadDashboardData();
       } else {
         throw new Error(data.message);
       }
@@ -1318,9 +1510,9 @@ document.addEventListener('DOMContentLoaded', () => {
         item.stok_saat_ini = parseFloat(item.stok_saat_ini) + parseFloat(qty);
       }
       showToast(`✓ Penerimaan barang PO #${po?.nomor_po || poId} selesai & stok bertambah!`, 'success');
-      loadProcurementData();
-      loadDashboardData();
     }
+
+    await triggerRealtimeUpdate('terima_barang');
   };
 
   // Submit Modal Jurnal Manual
@@ -1349,11 +1541,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (data.success) {
         showToast(`✓ Jurnal ${data.data.nomor_jurnal} tersimpan seimbang!`, 'success');
-        if (currentModule === 'finance') loadFinanceData();
       }
     } catch {
       showToast('✓ Jurnal berhasil dicatat!', 'success');
     }
+
+    await triggerRealtimeUpdate('create_jurnal');
   };
 
   // Submit Modal Mutasi Keluar
@@ -1380,12 +1573,12 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           showToast(`✓ Pemakaian tercatat. Sisa stok: ${data.data?.stok_akhir}`, 'success');
         }
-        if (currentModule === 'inventory') loadInventoryData();
-        loadDashboardData();
       }
     } catch {
       showToast('✓ Pemakaian stok berhasil dicatat!', 'success');
     }
+
+    await triggerRealtimeUpdate('create_mutasi');
   };
 
   // Hitung Payroll Pegawai
@@ -1421,6 +1614,8 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('✓ Slip gaji berhasil dihitung.', 'success');
       switchHcmTab('slip');
     }
+
+    await triggerRealtimeUpdate('kalkulasi_payroll');
   };
 
   // Seed Demo Absensi HCM
@@ -1431,37 +1626,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (data.success) {
         showToast('✓ 24 hari absensi demo berhasil dibuat!', 'success');
-        loadHcmData();
       }
     } catch {
       showToast('✓ Data absensi berhasil disiapkan.', 'success');
     }
+
+    await triggerRealtimeUpdate('seed_hcm');
   };
 
   // Topbar Refresh Button
-  btnRefresh.addEventListener('click', () => {
+  btnRefresh.addEventListener('click', async () => {
     btnRefresh.classList.add('loading');
     showToast(`Menyegarkan data modul ${currentModule.toUpperCase()}...`, 'info');
-    switch (currentModule) {
-      case 'dashboard':
-        loadDashboardData().then(() => showToast('Data diperbarui!', 'success'));
-        break;
-      case 'finance':
-        loadFinanceData().then(() => showToast('Data finance diperbarui!', 'success'));
-        break;
-      case 'hcm':
-        loadHcmData().then(() => showToast('Data HCM diperbarui!', 'success'));
-        break;
-      case 'procurement':
-        loadProcurementData().then(() => showToast('Data procurement diperbarui!', 'success'));
-        break;
-      case 'inventory':
-        loadInventoryData().then(() => showToast('Data inventory diperbarui!', 'success'));
-        break;
-      case 'users':
-        loadUsersData().then(() => showToast('Data pengguna diperbarui!', 'success'));
-        break;
-    }
+    await triggerRealtimeUpdate('manual_refresh');
     setTimeout(() => btnRefresh.classList.remove('loading'), 600);
   });
 
@@ -1648,7 +1825,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         closeModal('modal-create-user');
         document.getElementById('form-create-user').reset();
-        await loadUsersData();
+        await triggerRealtimeUpdate('create_user');
         showToast(`✓ Berhasil! Akun '${nama_lengkap}' (${role}) telah dibuat dan langsung terdata.`, 'success');
       } else {
         showToast(`✗ Gagal: ${data.message}`, 'warning');
@@ -1716,7 +1893,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         closeModal('modal-edit-user');
         showToast(`✓ ${data.message}`, 'success');
-        loadUsersData();
+        await triggerRealtimeUpdate('edit_user');
 
         // Jika mengedit user yang sedang login, update sesi aktif
         if (currentUser && currentUser.id_user == id) {
@@ -1744,7 +1921,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (data.success) {
         showToast(`✓ User '${username}' berhasil dihapus`, 'info');
-        loadUsersData();
+        await triggerRealtimeUpdate('delete_user');
       } else {
         showToast(`✗ ${data.message}`, 'warning');
       }
@@ -1856,7 +2033,7 @@ document.addEventListener('DOMContentLoaded', () => {
         applyRolePermissions();
 
         // Segera sinkronkan & muat tabel user agar akun langsung terdata
-        await loadUsersData();
+        await triggerRealtimeUpdate('auth_register');
 
         // Arahkan ke modul yang sesuai
         if (currentUser.role === 'MANAGER') {
@@ -1895,6 +2072,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('form-auth-register').reset();
       applyRolePermissions();
       renderUsersTable();
+      await triggerRealtimeUpdate('auth_register');
       if (currentUser.role === 'MANAGER') {
         switchModule('users');
       } else {
@@ -1924,7 +2102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const overlay = document.getElementById('auth-overlay');
         if (overlay) overlay.classList.add('hidden');
         applyRolePermissions();
-        await loadUsersData();
+        await triggerRealtimeUpdate('login_switch');
         showToast(`✓ Berhasil login sebagai ${currentUser.nama_lengkap} (${currentUser.role})!`, 'success');
       } else {
         showToast(`✗ Gagal login: ${data.message}`, 'warning');
@@ -1943,6 +2121,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const overlay = document.getElementById('auth-overlay');
       if (overlay) overlay.classList.add('hidden');
       applyRolePermissions();
+      await triggerRealtimeUpdate('login_switch');
       showToast(`✓ Berhasil login sebagai ${currentUser.nama_lengkap} (${currentUser.role})!`, 'success');
     }
   };

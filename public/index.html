@@ -119,7 +119,7 @@
           <span class="status-indicator online"></span>
           <div class="store-details">
             <span class="store-name">Outlet Senopati</span>
-            <span class="store-status">Sistem Online &bull; DB Terkoneksi</span>
+            <span class="store-status">Sistem Online &bull; Realtime Live</span>
           </div>
         </div>
         <div class="user-profile" id="btn-user-profile" onclick="openModal('modal-switch-user')" title="Klik untuk ganti pengguna / role" style="cursor: pointer;">
@@ -159,6 +159,12 @@
         </div>
 
         <div class="topbar-right">
+          <!-- Realtime Live Sync Indicator -->
+          <div class="live-sync-indicator" id="live-sync-indicator" onclick="triggerRealtimeUpdate('manual_click')" title="Sistem Realtime Aktif: Semua input data tersinkronisasi seketika. Klik untuk refresh paksa.">
+            <span class="live-sync-dot"></span>
+            <span class="live-sync-text" id="live-sync-text">Realtime Live</span>
+          </div>
+
           <div class="live-clock" id="live-clock">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
