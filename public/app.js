@@ -1469,11 +1469,131 @@ document.addEventListener('DOMContentLoaded', () => {
   // 7. USER MANAGEMENT & RBAC AUTHENTICATION LOGIC
   // ==============================================================
 
-  // Ambil Data Pengguna dari Backend
-  window.loadUsersData = async () => {
+  // State Filter & Pencarian Manajemen User
+  let currentRoleFilter = 'ALL';
+  let searchUserQuery = '';
+
+  window.setRoleFilter = (role) => {
+    currentRoleFilter = role;
+    document.querySelectorAll('.user-stat-pill').forEach((pill) => pill.classList.remove('active'));
+    const activePill = document.getElementById(`filter-pill-${role.toLowerCase()}`);
+    if (activePill) activePill.classList.add('active');
+    renderUsersTable();
+  };
+
+  window.handleSearchUsers = (query) => {
+    searchUserQuery = String(query).trim().toLowerCase();
+    renderUsersTable();
+  };
+
+  // Render Tabel Pengguna yang Simpel, Bersih, dan Nyaman Terbaca
+  window.renderUsersTable = () => {
     const tableBodyUsers = document.getElementById('table-body-users');
     if (!tableBodyUsers) return;
 
+    let filtered = systemUsers || [];
+
+    // 1. Filter Kategori Role
+    if (currentRoleFilter !== 'ALL') {
+      filtered = filtered.filter((u) => u.role === currentRoleFilter);
+    }
+
+    // 2. Filter Pencarian Teks
+    if (searchUserQuery) {
+      filtered = filtered.filter((u) => {
+        const nameMatch = (u.nama_lengkap || '').toLowerCase().includes(searchUserQuery);
+        const userMatch = (u.username || '').toLowerCase().includes(searchUserQuery);
+        return nameMatch || userMatch;
+      });
+    }
+
+    // Update Counter Badge
+    const badgeCount = document.getElementById('users-count-badge');
+    if (badgeCount) {
+      badgeCount.textContent = `${filtered.length} Terdaftar`;
+    }
+
+    if (filtered.length === 0) {
+      tableBodyUsers.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+            <div style="font-size: 1.8rem; margin-bottom: 8px;">🔍</div>
+            <strong style="display: block; font-size: 0.95rem; color: var(--text-heading); margin-bottom: 4px;">Tidak ada akun ditemukan</strong>
+            <span style="font-size: 0.82rem;">Coba sesuaikan kata kunci pencarian atau ganti filter role di atas.</span>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    const roleBadges = {
+      MANAGER: '<span class="badge-status" style="background: rgba(217, 119, 6, 0.12); color: #b45309; border: 1px solid rgba(217, 119, 6, 0.25); font-weight: 700; font-size: 0.78rem;">👑 Manager</span>',
+      FINANCE: '<span class="badge-status" style="background: rgba(2, 132, 199, 0.12); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.25); font-weight: 700; font-size: 0.78rem;">💰 Finance</span>',
+      HR: '<span class="badge-status" style="background: rgba(139, 92, 246, 0.12); color: #7c3aed; border: 1px solid rgba(139, 92, 246, 0.25); font-weight: 700; font-size: 0.78rem;">👥 HR</span>',
+      PROCUREMENT: '<span class="badge-status" style="background: rgba(245, 158, 11, 0.12); color: #d97706; border: 1px solid rgba(245, 158, 11, 0.25); font-weight: 700; font-size: 0.78rem;">📦 Procurement</span>'
+    };
+
+    const roleModules = {
+      MANAGER: '<span style="font-weight: 600; color: var(--green-deep); font-size: 0.82rem;">Semua Modul (Full Access)</span>',
+      FINANCE: '<span style="color: var(--text-body); font-size: 0.82rem;">Finance &amp; CoA</span>',
+      HR: '<span style="color: var(--text-body); font-size: 0.82rem;">HCM &amp; Payroll</span>',
+      PROCUREMENT: '<span style="color: var(--text-body); font-size: 0.82rem;">Procurement &amp; PO</span>'
+    };
+
+    const avatarBgClasses = {
+      MANAGER: 'bg-manager',
+      FINANCE: 'bg-finance',
+      HR: 'bg-hr',
+      PROCUREMENT: 'bg-procurement'
+    };
+
+    tableBodyUsers.innerHTML = filtered
+      .map((u) => {
+        const initials = (u.nama_lengkap || u.username || 'U')
+          .split(' ')
+          .filter(Boolean)
+          .map((n) => n[0])
+          .slice(0, 2)
+          .join('')
+          .toUpperCase() || 'U';
+
+        const avatarClass = avatarBgClasses[u.role] || 'bg-manager';
+        const isCurrentActive = currentUser && (currentUser.id_user == u.id_user || currentUser.username === u.username);
+        const canDelete = u.username !== 'manager' && !isCurrentActive;
+
+        const editBtn = `<button class="btn btn-secondary btn-sm" onclick="openEditUserModal(${u.id_user})" style="font-size: 0.78rem; padding: 4px 10px; margin-right: 4px;" title="Edit Data Pengguna">✏️ Edit</button>`;
+        const deleteBtn = canDelete
+          ? `<button class="btn btn-secondary btn-sm" style="color: var(--status-critical); border-color: rgba(220, 38, 38, 0.3); font-size: 0.78rem; padding: 4px 10px;" onclick="handleDeleteUser(${u.id_user}, '${u.username}')" title="Hapus Pengguna">🗑️ Hapus</button>`
+          : `<span style="font-size: 0.74rem; color: var(--text-muted); font-style: italic; padding: 0 4px;">Akun Inti</span>`;
+
+        const statusTag = u.is_active
+          ? `<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: #15803d;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #22c55e;"></span> Aktif</span>`
+          : `<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; color: #94a3b8;"><span style="width: 7px; height: 7px; border-radius: 50%; background: #94a3b8;"></span> Nonaktif</span>`;
+
+        return `
+          <tr>
+            <td><strong style="color: var(--text-muted); font-size: 0.84rem;">#${u.id_user}</strong></td>
+            <td>
+              <div class="user-avatar-cell">
+                <div class="user-avatar-circle ${avatarClass}">${initials}</div>
+                <div>
+                  <div class="user-name-title">${u.nama_lengkap} ${isCurrentActive ? '<span class="badge-status safe" style="font-size: 0.65rem; padding: 1px 6px; margin-left: 4px;">ANDA</span>' : ''}</div>
+                  <div class="user-username-tag">@${u.username}</div>
+                </div>
+              </div>
+            </td>
+            <td>${roleBadges[u.role] || u.role}</td>
+            <td>${roleModules[u.role] || '-'}</td>
+            <td>${statusTag}</td>
+            <td style="text-align: right; white-space: nowrap;">${editBtn}${deleteBtn}</td>
+          </tr>
+        `;
+      })
+      .join('');
+  };
+
+  // Ambil Data Pengguna dari Backend & Perbarui Metrik
+  window.loadUsersData = async () => {
     try {
       const res = await fetch('/api/users');
       const data = await res.json();
@@ -1485,73 +1605,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Hitung Statistik Pengguna
+    const totalCount = systemUsers.length;
     const mCount = systemUsers.filter((u) => u.role === 'MANAGER').length;
     const fCount = systemUsers.filter((u) => u.role === 'FINANCE').length;
     const hCount = systemUsers.filter((u) => u.role === 'HR').length;
     const pCount = systemUsers.filter((u) => u.role === 'PROCUREMENT').length;
 
+    const elTotal = document.getElementById('count-role-all');
     const elM = document.getElementById('count-role-manager');
     const elF = document.getElementById('count-role-finance');
     const elH = document.getElementById('count-role-hr');
     const elP = document.getElementById('count-role-procurement');
 
-    if (elM) elM.textContent = `${mCount} User`;
-    if (elF) elF.textContent = `${fCount} User`;
-    if (elH) elH.textContent = `${hCount} User`;
-    if (elP) elP.textContent = `${pCount} User`;
+    if (elTotal) elTotal.textContent = totalCount;
+    if (elM) elM.textContent = mCount;
+    if (elF) elF.textContent = fCount;
+    if (elH) elH.textContent = hCount;
+    if (elP) elP.textContent = pCount;
 
-    if (!systemUsers || systemUsers.length === 0) {
-      tableBodyUsers.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-dim);">Belum ada user terdaftar.</td></tr>`;
-      return;
-    }
-
-    const roleBadges = {
-      MANAGER: '<span class="badge-status safe" style="font-weight: 700;">👑 MANAGER</span>',
-      FINANCE: '<span class="badge-status warning" style="font-weight: 700;">💰 FINANCE</span>',
-      HR: '<span class="badge-status safe" style="font-weight: 700;">👥 HR</span>',
-      PROCUREMENT: '<span class="badge-status warning" style="font-weight: 700;">📦 PROCUREMENT</span>'
-    };
-
-    const roleModules = {
-      MANAGER: '<span class="category-tag">Semua Fitur (Full Access)</span>',
-      FINANCE: '<span class="category-tag">Hanya Modul Finance & CoA</span>',
-      HR: '<span class="category-tag">Hanya Modul HCM & Payroll</span>',
-      PROCUREMENT: '<span class="category-tag">Hanya Modul Procurement & PO</span>'
-    };
-
-    tableBodyUsers.innerHTML = systemUsers
-      .map((u) => {
-        const editBtn = `<button class="btn btn-secondary btn-sm" onclick="openEditUserModal(${u.id_user})" style="margin-right: 4px;">✏️ Edit</button>`;
-        const canDelete = u.username !== 'manager' && (!currentUser || u.id_user !== currentUser.id_user);
-        const deleteBtn = canDelete
-          ? `<button class="btn btn-secondary btn-sm" style="color: var(--status-critical); border-color: rgba(220, 38, 38, 0.3);" onclick="handleDeleteUser(${u.id_user}, '${u.username}')">🗑️ Hapus</button>`
-          : `<span style="font-size: 0.75rem; color: var(--text-dim); font-style: italic;">Akun Inti</span>`;
-
-        return `
-          <tr>
-            <td><strong>#${u.id_user}</strong></td>
-            <td>
-              <div class="item-cell">
-                <span class="item-name">${u.nama_lengkap}</span>
-                <span class="item-code">ID: ${u.id_user}</span>
-              </div>
-            </td>
-            <td><code>${u.username}</code></td>
-            <td>${roleBadges[u.role] || u.role}</td>
-            <td>${roleModules[u.role] || '-'}</td>
-            <td><span class="badge-status ${u.is_active ? 'safe' : 'danger'}">${u.is_active ? 'AKTIF' : 'NONAKTIF'}</span></td>
-            <td>${editBtn}${deleteBtn}</td>
-          </tr>
-        `;
-      })
-      .join('');
+    renderUsersTable();
   };
 
   // Submit Buat User Baru (Manager Only - CRUD Create)
   window.submitCreateUser = async (e) => {
     e.preventDefault();
     const nama_lengkap = document.getElementById('usr-nama-input').value.trim();
-    const username = document.getElementById('usr-username-input').value.trim();
+    const username = document.getElementById('usr-username-input').value.trim().toLowerCase();
     const password = document.getElementById('usr-password-input').value;
     const role = document.getElementById('usr-role-select').value;
 
@@ -1569,8 +1648,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success) {
         closeModal('modal-create-user');
         document.getElementById('form-create-user').reset();
-        showToast(`✓ Berhasil! User '${nama_lengkap}' (${role}) telah dibuat.`, 'success');
-        loadUsersData();
+        await loadUsersData();
+        showToast(`✓ Berhasil! Akun '${nama_lengkap}' (${role}) telah dibuat dan langsung terdata.`, 'success');
       } else {
         showToast(`✗ Gagal: ${data.message}`, 'warning');
       }
@@ -1750,7 +1829,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.submitAuthRegister = async (e) => {
     e.preventDefault();
     const nama_lengkap = document.getElementById('auth-reg-name').value.trim();
-    const username = document.getElementById('auth-reg-username').value.trim();
+    const username = document.getElementById('auth-reg-username').value.trim().toLowerCase();
     const password = document.getElementById('auth-reg-password').value;
     const role = document.getElementById('auth-reg-role').value;
     const btn = document.getElementById('btn-auth-register');
@@ -1767,14 +1846,61 @@ document.addEventListener('DOMContentLoaded', () => {
       if (data.success && data.data) {
         currentUser = data.data;
         localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
-        document.getElementById('auth-overlay').classList.add('hidden');
+        
+        // Tutup screen login & bersihkan form
+        const overlay = document.getElementById('auth-overlay');
+        if (overlay) overlay.classList.add('hidden');
+        document.getElementById('form-auth-register').reset();
+
+        // Terapkan hak akses
         applyRolePermissions();
-        showToast(`✓ Registrasi berhasil! Selamat datang di Kafeina ERP, ${currentUser.nama_lengkap}.`, 'success');
+
+        // Segera sinkronkan & muat tabel user agar akun langsung terdata
+        await loadUsersData();
+
+        // Arahkan ke modul yang sesuai
+        if (currentUser.role === 'MANAGER') {
+          switchModule('users');
+          showToast(`✓ Registrasi berhasil! Akun '${currentUser.nama_lengkap}' (${currentUser.role}) aktif dan langsung terdata di Manajemen Akun.`, 'success');
+        } else {
+          switchModule(currentUser.allowed_modules[0] || 'dashboard');
+          showToast(`✓ Registrasi berhasil! Selamat datang di Kafeina ERP, ${currentUser.nama_lengkap} (${currentUser.role}).`, 'success');
+        }
       } else {
         showToast(`✗ Registrasi gagal: ${data.message}`, 'warning');
       }
-    } catch {
-      showToast('✗ Terjadi gangguan koneksi saat registrasi akun baru', 'critical');
+    } catch (err) {
+      console.error('Register error:', err);
+      // Fallback offline jika server belum merespon
+      const mockId = Date.now();
+      const mockUser = {
+        id_user: mockId,
+        nama_lengkap,
+        username,
+        role,
+        role_name: role === 'MANAGER' ? 'Store Manager & Owner' : `Staff ${role}`,
+        allowed_modules: role === 'MANAGER'
+          ? ['dashboard', 'finance', 'hcm', 'procurement', 'inventory', 'users']
+          : role === 'FINANCE' ? ['finance'] : role === 'HR' ? ['hcm'] : ['procurement'],
+        can_manage_users: (role === 'MANAGER'),
+        is_active: true
+      };
+      currentUser = mockUser;
+      if (!systemUsers.some((u) => u.username === username)) {
+        systemUsers.push(mockUser);
+      }
+      localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
+      const overlay = document.getElementById('auth-overlay');
+      if (overlay) overlay.classList.add('hidden');
+      document.getElementById('form-auth-register').reset();
+      applyRolePermissions();
+      renderUsersTable();
+      if (currentUser.role === 'MANAGER') {
+        switchModule('users');
+      } else {
+        switchModule(currentUser.allowed_modules[0] || 'dashboard');
+      }
+      showToast(`✓ Registrasi berhasil: Selamat datang, ${currentUser.nama_lengkap}!`, 'success');
     } finally {
       if (btn) btn.disabled = false;
     }

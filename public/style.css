@@ -1626,3 +1626,122 @@ body {
   transform: translateY(-1px);
 }
 
+/* ==========================================================================
+   11. USER MANAGEMENT SIMPLE & COMFORTABLE UI
+   ========================================================================== */
+.user-stats-strip {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding: 4px 2px 14px;
+  align-items: center;
+}
+
+.user-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border: 1px solid var(--border-card);
+  border-radius: 30px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--text-body);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.user-stat-pill:hover {
+  background: #f4f9f6;
+  border-color: var(--green-pine);
+  transform: translateY(-1px);
+}
+
+.user-stat-pill.active {
+  background: var(--green-deep);
+  color: #ffffff;
+  border-color: var(--green-deep);
+  box-shadow: 0 4px 12px rgba(10, 41, 30, 0.2);
+}
+
+.user-stat-pill.active .user-stat-label {
+  color: #ffffff;
+}
+
+.user-stat-pill.active .user-stat-num {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.user-stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-mint);
+}
+
+.user-stat-dot.dot-manager { background: var(--accent-gold); }
+.user-stat-dot.dot-finance { background: #0284c7; }
+.user-stat-dot.dot-hr { background: #8b5cf6; }
+.user-stat-dot.dot-procurement { background: #f59e0b; }
+
+.user-stat-num {
+  padding: 2px 8px;
+  background: #eef5f1;
+  color: var(--green-deep);
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* User Row Avatar & Details in Table */
+.user-avatar-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.user-avatar-circle.bg-manager {
+  background: linear-gradient(135deg, #174d3b, #247559);
+  border: 1.5px solid var(--accent-gold);
+}
+.user-avatar-circle.bg-finance {
+  background: linear-gradient(135deg, #0369a1, #0284c7);
+}
+.user-avatar-circle.bg-hr {
+  background: linear-gradient(135deg, #6d28d9, #8b5cf6);
+}
+.user-avatar-circle.bg-procurement {
+  background: linear-gradient(135deg, #b45309, #f59e0b);
+}
+
+.user-name-title {
+  font-weight: 700;
+  color: var(--text-heading);
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.user-username-tag {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+

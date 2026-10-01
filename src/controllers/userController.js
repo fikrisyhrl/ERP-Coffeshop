@@ -87,10 +87,12 @@ const userController = {
         });
       }
 
+      const cleanUsername = String(username).trim().toLowerCase();
+
       // Pastikan user default ada
       await userController.seedDefaultUsers();
 
-      const user = await User.findOne({ where: { username, is_active: true } });
+      const user = await User.findOne({ where: { username: cleanUsername, is_active: true } });
       if (!user || !user.verifyPassword(password)) {
         return res.status(401).json({
           success: false,
@@ -168,19 +170,22 @@ const userController = {
         });
       }
 
+      const cleanUsername = String(username).trim().toLowerCase();
+      const cleanNama = String(nama_lengkap).trim();
+
       // Cek apakah username sudah ada
-      const existing = await User.findOne({ where: { username } });
+      const existing = await User.findOne({ where: { username: cleanUsername } });
       if (existing) {
         return res.status(409).json({
           success: false,
-          message: `Username '${username}' sudah digunakan. Silakan gunakan username lain.`
+          message: `Username '${cleanUsername}' sudah digunakan. Silakan gunakan username lain.`
         });
       }
 
       const newUser = await User.create({
-        nama_lengkap,
-        username,
-        password,
+        nama_lengkap: cleanNama,
+        username: cleanUsername,
+        password: String(password),
         role: role.toUpperCase(),
         is_active: true
       });
@@ -207,7 +212,7 @@ const userController = {
    */
   register: async (req, res, next) => {
     try {
-      const { nama_lengkap, username, password, role } = req.body;
+      let { nama_lengkap, username, password, role } = req.body;
 
       if (!nama_lengkap || !username || !password) {
         return res.status(400).json({
@@ -216,29 +221,42 @@ const userController = {
         });
       }
 
-      if (password.length < 4) {
+      const cleanUsername = String(username).trim().toLowerCase();
+      const cleanNama = String(nama_lengkap).trim();
+
+      if (cleanUsername.length < 3) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username minimal 3 karakter'
+        });
+      }
+
+      if (String(password).length < 4) {
         return res.status(400).json({
           success: false,
           message: 'Password minimal 4 karakter'
         });
       }
 
-      const assignedRole = (role && ['MANAGER', 'FINANCE', 'HR', 'PROCUREMENT'].includes(role.toUpperCase()))
-        ? role.toUpperCase()
+      const assignedRole = (role && ['MANAGER', 'FINANCE', 'HR', 'PROCUREMENT'].includes(String(role).toUpperCase()))
+        ? String(role).toUpperCase()
         : 'FINANCE';
 
-      const existing = await User.findOne({ where: { username } });
+      // Pastikan tabel dan user bawaan sudah disiapkan
+      await userController.seedDefaultUsers();
+
+      const existing = await User.findOne({ where: { username: cleanUsername } });
       if (existing) {
         return res.status(409).json({
           success: false,
-          message: `Username '${username}' sudah digunakan. Silakan gunakan username lain.`
+          message: `Username '${cleanUsername}' sudah digunakan. Silakan gunakan username lain.`
         });
       }
 
       const newUser = await User.create({
-        nama_lengkap,
-        username,
-        password,
+        nama_lengkap: cleanNama,
+        username: cleanUsername,
+        password: String(password),
         role: assignedRole,
         is_active: true
       });
@@ -246,7 +264,7 @@ const userController = {
       const permissions = ROLE_PERMISSIONS[newUser.role] || {
         role_name: newUser.role,
         allowed_modules: ['dashboard'],
-        can_manage_users: false
+        can_manage_users: (newUser.role === 'MANAGER')
       };
 
       res.status(201).json({
