@@ -6,7 +6,8 @@ const {
   GoodsReceipt,
   GoodsReceiptItem,
   StockMutation,
-  Supplier
+  Supplier,
+  PurchaseInvoice
 } = require('../models');
 
 /**
@@ -174,12 +175,26 @@ const procurementService = {
 
       // 3. Proses setiap item barang yang masuk
       for (const item of items) {
-        const { po_item_id, id_barang, jumlah_diterima, harga_beli_satuan, batch_number, tanggal_kadaluarsa } = item;
+        const {
+          po_item_id,
+          id_barang,
+          jumlah_diterima,
+          harga_beli_satuan,
+          batch_number,
+          tanggal_kadaluarsa,
+          quality_grade = 'GRADE_A',
+          jumlah_lolos_qc,
+          jumlah_reject_qc = 0,
+          catatan_qc
+        } = item;
 
-        const qtyMasuk = parseFloat(jumlah_diterima);
+        const qtyTotalDiterima = parseFloat(jumlah_diterima);
+        const qtyReject = parseFloat(jumlah_reject_qc || 0);
+        const qtyMasukLolos =
+          jumlah_lolos_qc !== undefined ? parseFloat(jumlah_lolos_qc) : Math.max(qtyTotalDiterima - qtyReject, 0);
         const hargaBeliBaru = parseFloat(harga_beli_satuan);
 
-        if (isNaN(qtyMasuk) || qtyMasuk <= 0) {
+        if (isNaN(qtyTotalDiterima) || qtyTotalDiterima <= 0) {
           throw new Error(`Jumlah diterima untuk item ID ${id_barang} harus lebih dari 0`);
         }
         if (isNaN(hargaBeliBaru) || hargaBeliBaru < 0) {
@@ -209,42 +224,46 @@ const procurementService = {
         const stokLama = parseFloat(barang.stok_saat_ini);
         const hppLama = parseFloat(barang.harga_satuan);
 
-        // ====================================================================
         // FORMULA METODE MOVING WEIGHTED AVERAGE COST (HPP RATA-RATA BERGERAK):
-        // HPP Baru = ((Stok Lama * HPP Lama) + (Qty Masuk * Harga Beli Baru)) / (Stok Lama + Qty Masuk)
-        // ====================================================================
         const stokValidLama = stokLama > 0 ? stokLama : 0;
         const totalNilaiPersediaanLama = stokValidLama * hppLama;
-        const totalNilaiPembelianBaru = qtyMasuk * hargaBeliBaru;
-        const totalStokBaru = stokValidLama + qtyMasuk;
+        const totalNilaiPembelianBaru = qtyMasukLolos * hargaBeliBaru;
+        const totalStokBaru = stokValidLama + qtyMasukLolos;
 
         let hppBaru = hargaBeliBaru;
         if (totalStokBaru > 0) {
           hppBaru = (totalNilaiPersediaanLama + totalNilaiPembelianBaru) / totalStokBaru;
-          hppBaru = Math.round(hppBaru * 100) / 100; // Pembulatan 2 desimal
+          hppBaru = Math.round(hppBaru * 100) / 100;
         }
 
-        const stokFisikBaru = Math.round((stokLama + qtyMasuk) * 1000) / 1000;
+        const stokFisikBaru = Math.round((stokLama + qtyMasukLolos) * 1000) / 1000;
+        const stokRejectBaru = Math.round(((parseFloat(barang.stok_reject) || 0) + qtyReject) * 1000) / 1000;
 
         // Update data master barang
         await barang.update(
           {
             stok_saat_ini: stokFisikBaru,
+            stok_reject: stokRejectBaru,
+            quality_grade: quality_grade || barang.quality_grade || 'GRADE_A',
             harga_satuan: hppBaru
           },
           { transaction: t }
         );
 
-        // Catat detail penerimaan barang (GoodsReceiptItem)
+        // Catat detail penerimaan barang (GoodsReceiptItem) dengan atribut Quality Stock
         await GoodsReceiptItem.create(
           {
             penerimaan_id: goodsReceipt.id_penerimaan,
             po_item_id: poItem.id_po_item,
             id_barang: barang.id_barang,
-            jumlah_diterima: qtyMasuk,
+            jumlah_diterima: qtyTotalDiterima,
             harga_beli_satuan: hargaBeliBaru,
             batch_number: batch_number || null,
-            tanggal_kadaluarsa: tanggal_kadaluarsa || null
+            tanggal_kadaluarsa: tanggal_kadaluarsa || null,
+            quality_grade: quality_grade || 'GRADE_A',
+            jumlah_lolos_qc: qtyMasukLolos,
+            jumlah_reject_qc: qtyReject,
+            catatan_qc: catatan_qc || null
           },
           { transaction: t }
         );
@@ -254,27 +273,30 @@ const procurementService = {
           {
             id_barang: barang.id_barang,
             tipe_mutasi: 'IN_PROCUREMENT',
-            jumlah_masuk: qtyMasuk,
+            jumlah_masuk: qtyMasukLolos,
             jumlah_keluar: 0,
             saldo_akhir: stokFisikBaru,
             harga_satuan: hppBaru,
             referensi_tipe: 'GOODS_RECEIPT',
             referensi_id: goodsReceipt.id_penerimaan,
-            keterangan: `Penerimaan barang dari PO #${po.nomor_po}, No Surat Jalan: ${nomor_surat_jalan}`
+            keterangan: `Penerimaan barang PO #${po.nomor_po} (${quality_grade}, Lolos QC: ${qtyMasukLolos} ${barang.satuan}${qtyReject > 0 ? `, Reject: ${qtyReject} ${barang.satuan}` : ''})`
           },
           { transaction: t }
         );
 
         // Update jumlah akumulasi diterima pada baris PO
-        const akumulasiDiterima = parseFloat(poItem.jumlah_diterima) + qtyMasuk;
+        const akumulasiDiterima = parseFloat(poItem.jumlah_diterima) + qtyTotalDiterima;
         await poItem.update({ jumlah_diterima: akumulasiDiterima }, { transaction: t });
 
         auditHasilPenerimaan.push({
           id_barang: barang.id_barang,
           nama_barang: barang.nama_barang,
           satuan: barang.satuan,
+          quality_grade: quality_grade,
+          jumlah_diterima: qtyTotalDiterima,
+          jumlah_lolos_qc: qtyMasukLolos,
+          jumlah_reject_qc: qtyReject,
           stok_sebelumnya: stokLama,
-          jumlah_masuk: qtyMasuk,
           stok_sekarang: stokFisikBaru,
           hpp_sebelumnya: hppLama,
           harga_beli_faktur: hargaBeliBaru,
@@ -295,11 +317,43 @@ const procurementService = {
       po.status = isAllCompleted ? 'COMPLETED' : 'PARTIALLY_RECEIVED';
       await po.save({ transaction: t });
 
+      // 5. Otomatis Buat Purchase Invoice (Status: UNPAID) untuk Bagian Keuangan (Finance)
+      let createdInvoice = null;
+      try {
+        const existingInv = await PurchaseInvoice.findOne({
+          where: { po_id: po.id_po },
+          transaction: t
+        });
+
+        if (!existingInv) {
+          const invDueDate = new Date();
+          invDueDate.setDate(invDueDate.getDate() + 7);
+
+          createdInvoice = await PurchaseInvoice.create(
+            {
+              nomor_invoice: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+              po_id: po.id_po,
+              supplier_id: po.supplier_id,
+              tanggal_invoice: new Date(),
+              tanggal_jatuh_tempo: invDueDate,
+              total_tagihan: po.total_estimasi,
+              status_pembayaran: 'UNPAID',
+              catatan: `Invoice Tagihan Pembelian Barang PO #${po.nomor_po} (No Surat Jalan: ${nomor_surat_jalan || '-'})`
+            },
+            { transaction: t }
+          );
+        } else {
+          createdInvoice = existingInv;
+        }
+      } catch (errInv) {
+        console.warn('Auto invoice error:', errInv);
+      }
+
       await t.commit();
 
       return {
         success: true,
-        message: 'Barang berhasil diterima, stok bertambah, dan HPP rata-rata berhasil dikalkulasi ulang',
+        message: 'Barang berhasil diterima & lolos inspeksi Quality Stock. Invoice tagihan otomatis diteruskan ke Finance.',
         data: {
           goods_receipt: {
             id_penerimaan: goodsReceipt.id_penerimaan,
@@ -308,6 +362,7 @@ const procurementService = {
             diterima_oleh: goodsReceipt.diterima_oleh,
             tanggal_terima: goodsReceipt.tanggal_terima
           },
+          invoice: createdInvoice,
           po_status_terkini: po.status,
           rincian_barang: auditHasilPenerimaan
         }

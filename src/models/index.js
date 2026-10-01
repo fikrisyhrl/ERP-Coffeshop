@@ -19,6 +19,7 @@ const PayrollItem = require('./PayrollItem');
 const ChartOfAccount = require('./ChartOfAccount');
 const JournalEntry = require('./JournalEntry');
 const JournalEntryLine = require('./JournalEntryLine');
+const PurchaseInvoice = require('./PurchaseInvoice');
 
 // Auth & User RBAC Models
 const User = require('./User');
@@ -78,6 +79,13 @@ JournalEntryLine.belongsTo(JournalEntry, { foreignKey: 'jurnal_id' });
 ChartOfAccount.hasMany(JournalEntryLine, { foreignKey: 'akun_id' });
 JournalEntryLine.belongsTo(ChartOfAccount, { foreignKey: 'akun_id', as: 'akun' });
 
+// --- INVOICE & TAGIHAN PO ---
+PurchaseOrder.hasMany(PurchaseInvoice, { foreignKey: 'po_id', as: 'invoices', onDelete: 'CASCADE' });
+PurchaseInvoice.belongsTo(PurchaseOrder, { foreignKey: 'po_id', as: 'purchase_order' });
+
+Supplier.hasMany(PurchaseInvoice, { foreignKey: 'supplier_id', as: 'invoices' });
+PurchaseInvoice.belongsTo(Supplier, { foreignKey: 'supplier_id', as: 'supplier' });
+
 const db = {
   sequelize,
   Barang,
@@ -96,6 +104,7 @@ const db = {
   ChartOfAccount,
   JournalEntry,
   JournalEntryLine,
+  PurchaseInvoice,
   User
 };
 

@@ -85,20 +85,39 @@ const barangController = {
    */
   createBarang: async (req, res, next) => {
     try {
-      const { nama_barang, kategori, satuan, harga_satuan, batas_safety_stock } = req.body;
+      const {
+        nama_barang,
+        kategori,
+        satuan,
+        harga_satuan,
+        batas_safety_stock,
+        supplier_id,
+        quality_grade,
+        stok_saat_ini
+      } = req.body;
+
+      if (!nama_barang) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nama barang wajib diisi'
+        });
+      }
 
       // Buat data baru via Sequelize
       const barangBaru = await Barang.create({
         nama_barang: nama_barang.trim(),
-        kategori: kategori.trim(),
-        satuan: satuan.trim(),
-        harga_satuan: parseFloat(harga_satuan),
-        batas_safety_stock: parseFloat(batas_safety_stock)
+        kategori: kategori ? kategori.trim() : 'Bahan Baku',
+        satuan: satuan ? satuan.trim() : 'unit',
+        harga_satuan: parseFloat(harga_satuan || 0),
+        batas_safety_stock: parseFloat(batas_safety_stock || 0),
+        stok_saat_ini: parseFloat(stok_saat_ini || 0),
+        supplier_id: supplier_id ? parseInt(supplier_id) : null,
+        quality_grade: quality_grade || 'GRADE_A'
       });
 
       return res.status(201).json({
         success: true,
-        message: 'Barang baru berhasil ditambahkan ke inventaris',
+        message: `Bahan baku '${barangBaru.nama_barang}' berhasil ditambahkan ke inventaris`,
         data: barangBaru
       });
     } catch (error) {

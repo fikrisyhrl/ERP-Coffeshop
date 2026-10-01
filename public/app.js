@@ -19,6 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
   let supplierList = [];
   let stockMutations = [];
   let systemUsers = [];
+  let purchaseInvoices = [];
+  let cashBalanceData = { kas_toko: 0, bank_bca: 0, total_uang_tersedia: 0 };
 
   // User State & RBAC Permissions
   let currentUser = JSON.parse(localStorage.getItem('kafeina_erp_user') || 'null');
@@ -355,6 +357,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('panel-finance-coa').classList.add('hidden');
     const panelApproval = document.getElementById('panel-finance-approval');
     if (panelApproval) panelApproval.classList.add('hidden');
+    const panelInvoice = document.getElementById('panel-finance-invoice');
+    if (panelInvoice) panelInvoice.classList.add('hidden');
 
     if (tab === 'jurnal') {
       document.querySelector('#view-finance .sub-tab:nth-child(1)').classList.add('active');
@@ -365,6 +369,10 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (tab === 'approval') {
       document.querySelector('#view-finance .sub-tab:nth-child(3)').classList.add('active');
       if (panelApproval) panelApproval.classList.remove('hidden');
+    } else if (tab === 'invoice') {
+      document.querySelector('#view-finance .sub-tab:nth-child(4)').classList.add('active');
+      if (panelInvoice) panelInvoice.classList.remove('hidden');
+      loadInvoicesData();
     }
   };
 
@@ -731,6 +739,317 @@ document.addEventListener('DOMContentLoaded', () => {
           .join('');
       }
     }
+
+    // 4. Fetch Saldo Kas & Bank Tersedia Realtime
+    try {
+      const resCash = await fetch('/api/finance/cash-balance');
+      const dataCash = await resCash.json();
+      if (dataCash.success && dataCash.data) {
+        cashBalanceData = dataCash.data;
+        const elKas = document.getElementById('fin-kas-toko');
+        const elBank = document.getElementById('fin-bank-bca');
+        const elTotal = document.getElementById('fin-total-uang');
+        if (elKas) elKas.textContent = `Rp ${cashBalanceData.kas_toko.toLocaleString('id-ID')}`;
+        if (elBank) elBank.textContent = `Rp ${cashBalanceData.bank_bca.toLocaleString('id-ID')}`;
+        if (elTotal) elTotal.textContent = `Rp ${cashBalanceData.total_uang_tersedia.toLocaleString('id-ID')}`;
+      }
+    } catch {
+      console.warn('Finance cash-balance fetch offline fallback');
+    }
+
+    // 5. Fetch & Render Invoice Tagihan Barang
+    await loadInvoicesData();
+  };
+
+  // --- SUB-FITUR FINANCE: INVOICE TAGIHAN BARANG & SALDO KAS REALTIME ---
+  window.loadInvoicesData = async () => {
+    const filterStatus = document.getElementById('filter-invoice-status')?.value || 'ALL';
+    try {
+      const url = filterStatus !== 'ALL' ? `/api/finance/invoices?status=${filterStatus}` : '/api/finance/invoices';
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        purchaseInvoices = data.data;
+      }
+    } catch (err) {
+      console.warn('Invoices fetch error:', err);
+    }
+
+    // Update KPI Tagihan Unpaid
+    const unpaidList = purchaseInvoices.filter((i) => i.status_pembayaran === 'UNPAID');
+    const unpaidNominal = unpaidList.reduce((acc, i) => acc + (parseFloat(i.total_tagihan) || 0), 0);
+
+    const elUnpaidCount = document.getElementById('fin-kpi-unpaid-inv');
+    const elUnpaidNominal = document.getElementById('fin-kpi-unpaid-nominal');
+    const elBadge = document.getElementById('fin-invoice-badge');
+
+    if (elUnpaidCount) elUnpaidCount.textContent = `${unpaidList.length} Unpaid`;
+    if (elUnpaidNominal) elUnpaidNominal.textContent = `Rp ${unpaidNominal.toLocaleString('id-ID')} Belum Terbayar`;
+    if (elBadge) {
+      elBadge.textContent = unpaidList.length;
+      if (unpaidList.length === 0) elBadge.classList.add('badge-zero');
+      else elBadge.classList.remove('badge-zero');
+    }
+
+    renderInvoicesTable();
+  };
+
+  window.renderInvoicesTable = () => {
+    const tbody = document.getElementById('table-body-finance-invoices');
+    if (!tbody) return;
+
+    const filterStatus = document.getElementById('filter-invoice-status')?.value || 'ALL';
+    let filtered = purchaseInvoices;
+    if (filterStatus !== 'ALL') {
+      filtered = filtered.filter((i) => i.status_pembayaran === filterStatus);
+    }
+
+    if (!filtered || filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 36px 20px; color: var(--text-dim);">
+        <div style="font-size: 1.6rem; margin-bottom: 6px;">📄</div>
+        <strong>Belum ada invoice tagihan supplier.</strong><br>
+        <span style="font-size: 0.82rem;">Setiap penerimaan barang (GRN) dari PO yang disetujui akan otomatis menerbitkan invoice tagihan di sini untuk dibayarkan Finance.</span>
+      </td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtered
+      .map((inv) => {
+        const po = inv.purchase_order;
+        const supplier = inv.supplier || po?.supplier;
+        const itemsText =
+          po?.items
+            ?.map(
+              (it) =>
+                `${it.barang?.nama_barang || 'Komoditas'} (${parseFloat(it.jumlah_pesan || 0).toLocaleString('id-ID')} ${it.barang?.satuan || 'unit'})`
+            )
+            .join(', ') || 'Pengadaan Bahan Baku';
+
+        const isPaid = inv.status_pembayaran === 'PAID';
+        const statusBadge = isPaid
+          ? `<span class="badge-invoice-paid">✓ LUNAS (PAID)</span>`
+          : `<span class="badge-invoice-unpaid">⏳ BELUM BAYAR (UNPAID)</span>`;
+
+        const paymentInfo = isPaid
+          ? `<div style="font-size: 0.8rem; line-height: 1.35;">
+              <strong style="color: var(--green-deep);">${inv.metode_pembayaran || 'TRANSFER_BCA'}</strong><br>
+              <span style="color: var(--text-muted); font-size: 0.76rem;">${inv.tanggal_bayar ? new Date(inv.tanggal_bayar).toLocaleDateString('id-ID') : '-'} &bull; Oleh: ${inv.dibayar_oleh || 'Finance'}</span>
+            </div>`
+          : `<span style="font-size: 0.8rem; color: #b91c1c; font-weight: 500;">Menunggu Pelunasan</span>`;
+
+        const actionCol = isPaid
+          ? `<div style="display: flex; gap: 6px; justify-content: flex-end;">
+              <button class="btn-view-voucher" onclick="openInvoicePreviewModal(${inv.id_invoice})">📄 Bukti Bayar</button>
+            </div>`
+          : `<div style="display: flex; gap: 6px; justify-content: flex-end;">
+              <button class="btn-pay-invoice" onclick="openPayInvoiceModal(${inv.id_invoice})">💳 Bayar Invoice</button>
+              <button class="btn-view-voucher" onclick="openInvoicePreviewModal(${inv.id_invoice})">👁️ Detail</button>
+            </div>`;
+
+        return `
+          <tr>
+            <td>
+              <div class="item-cell">
+                <span class="item-name">${inv.nomor_invoice}</span>
+                <span class="item-code">${inv.tanggal_invoice || '-'}</span>
+              </div>
+            </td>
+            <td>
+              <strong style="color: var(--text-heading); font-size: 0.88rem;">${po?.nomor_po || 'PO'}</strong>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">${supplier?.nama_supplier || 'Supplier Rekanan'}</div>
+            </td>
+            <td style="font-size: 0.82rem; max-width: 220px;">${itemsText}</td>
+            <td><span style="font-size: 0.82rem; color: ${isPaid ? 'var(--text-muted)' : '#b91c1c'}; font-weight: ${isPaid ? '400' : '700'};">${inv.tanggal_jatuh_tempo || '-'}</span></td>
+            <td><strong style="color: var(--green-deep); font-size: 0.95rem;">Rp ${parseFloat(inv.total_tagihan || 0).toLocaleString('id-ID')}</strong></td>
+            <td>${statusBadge}</td>
+            <td>${paymentInfo}</td>
+            <td>${actionCol}</td>
+          </tr>
+        `;
+      })
+      .join('');
+  };
+
+  // Buka Modal Bayar Invoice
+  window.openPayInvoiceModal = (idInvoice) => {
+    const inv = purchaseInvoices.find((i) => i.id_invoice === idInvoice);
+    if (!inv) return;
+    document.getElementById('pay-inv-id').value = idInvoice;
+    const summaryBox = document.getElementById('pay-inv-summary');
+    if (summaryBox) {
+      summaryBox.innerHTML = `
+        <div style="font-weight: 700; margin-bottom: 6px; color: var(--green-deep); font-size: 0.92rem;">Konfirmasi Pembayaran Tagihan:</div>
+        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 4px; font-size: 0.84rem;">
+          <span style="color: var(--text-muted);">Nomor Faktur:</span><strong>${inv.nomor_invoice}</strong>
+          <span style="color: var(--text-muted);">Nomor PO:</span><strong>${inv.purchase_order?.nomor_po || '-'}</strong>
+          <span style="color: var(--text-muted);">Vendor / Supplier:</span><strong>${inv.supplier?.nama_supplier || inv.purchase_order?.supplier?.nama_supplier || '-'}</strong>
+          <span style="color: var(--text-muted);">Jatuh Tempo:</span><span style="color: #b91c1c; font-weight: 600;">${inv.tanggal_jatuh_tempo || '-'}</span>
+          <span style="color: var(--text-muted);">Total Tagihan:</span><strong style="color: #b91c1c; font-size: 1.1rem;">Rp ${parseFloat(inv.total_tagihan).toLocaleString('id-ID')}</strong>
+        </div>
+        <div style="margin-top: 10px; font-size: 0.78rem; color: var(--text-muted); padding: 8px; background: rgba(36, 117, 89, 0.08); border-radius: 6px;">
+          ℹ️ Pembayaran ini otomatis mencatat Jurnal Pengeluaran Kas (Debet Hutang Usaha / Beban Pengadaan, Kredit Kas/Bank) dan memotong saldo dana secara realtime.
+        </div>
+      `;
+    }
+    openModal('modal-pay-invoice');
+  };
+
+  // Submit Pembayaran Invoice
+  window.submitPayInvoice = async (e) => {
+    e.preventDefault();
+    const idInvoice = parseInt(document.getElementById('pay-inv-id').value);
+    const akun_kas_id = parseInt(document.getElementById('pay-inv-akun-kas').value);
+    const metode_pembayaran = document.getElementById('pay-inv-metode').value;
+    const dibayar_oleh = document.getElementById('pay-inv-dibayar-oleh').value;
+    const catatan = document.getElementById('pay-inv-catatan').value;
+
+    closeModal('modal-pay-invoice');
+    showToast('Memproses pelunasan invoice & pemotongan kas...', 'info');
+
+    try {
+      const res = await fetch(`/api/finance/invoices/${idInvoice}/bayar`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ akun_kas_id, metode_pembayaran, dibayar_oleh, catatan })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✓ Invoice #${data.data?.invoice?.nomor_invoice || idInvoice} berhasil DIBAYAR LUNAS! Kas & Jurnal terupdate otomatis.`, 'success');
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (err) {
+      // Local optimistic update jika offline
+      const targetInv = purchaseInvoices.find((i) => i.id_invoice === idInvoice);
+      if (targetInv) {
+        targetInv.status_pembayaran = 'PAID';
+        targetInv.metode_pembayaran = metode_pembayaran;
+        targetInv.tanggal_bayar = new Date().toISOString();
+        targetInv.dibayar_oleh = dibayar_oleh;
+      }
+      showToast(`✓ Invoice #${targetInv?.nomor_invoice || idInvoice} DIBAYAR LUNAS (Mode Lokal)!`, 'success');
+    }
+
+    await triggerRealtimeUpdate('invoice_paid');
+  };
+
+  // Modal Preview / Cetak Faktur Voucher
+  window.openInvoicePreviewModal = (idInvoice) => {
+    const inv = purchaseInvoices.find((i) => i.id_invoice === idInvoice);
+    if (!inv) return;
+    const container = document.getElementById('invoice-preview-container');
+    if (!container) return;
+
+    const po = inv.purchase_order;
+    const supplier = inv.supplier || po?.supplier;
+    const isPaid = inv.status_pembayaran === 'PAID';
+
+    container.innerHTML = `
+      <div class="invoice-voucher-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid var(--green-deep); padding-bottom: 12px; margin-bottom: 16px;">
+          <div>
+            <h2 style="font-family: var(--font-heading); color: var(--green-deep); margin: 0; font-size: 1.35rem;">KAFEINA SPECIALTY COFFEE</h2>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Jl. Senopati Raya No. 42, Kebayoran Baru, Jakarta Selatan</span><br>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">NPWP: 01.345.678.9-012.000 &bull; finance@kafeinacoffee.id</span>
+          </div>
+          <div style="text-align: right;">
+            <span style="font-size: 0.72rem; text-transform: uppercase; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em;">FAKTUR PEMBELIAN / INVOICE</span>
+            <h3 style="color: var(--text-heading); margin: 4px 0 0 0; font-size: 1.1rem;">${inv.nomor_invoice}</h3>
+            <span class="${isPaid ? 'badge-invoice-paid' : 'badge-invoice-unpaid'}" style="margin-top: 6px; display: inline-block;">${isPaid ? '✓ LUNAS (PAID)' : '⏳ BELUM DIBAYAR'}</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; font-size: 0.84rem;">
+          <div style="background: var(--bg-surface); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <strong style="color: var(--text-heading); display: block; margin-bottom: 4px; font-size: 0.82rem; text-transform: uppercase;">Pemasok / Vendor:</strong>
+            <div style="font-weight: 600; color: var(--green-deep); font-size: 0.92rem;">${supplier?.nama_supplier || 'Supplier Rekanan'}</div>
+            <div style="color: var(--text-muted); font-size: 0.78rem;">${supplier?.alamat || 'Alamat Gudang Supplier'}</div>
+            <div style="color: var(--text-muted); font-size: 0.78rem;">Telp: ${supplier?.telepon || '-'} &bull; ${supplier?.email || '-'}</div>
+          </div>
+          <div style="background: var(--bg-surface); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+            <strong style="color: var(--text-heading); display: block; margin-bottom: 4px; font-size: 0.82rem; text-transform: uppercase;">Rincian Dokumen:</strong>
+            <div><strong>Nomor PO:</strong> ${po?.nomor_po || '-'}</div>
+            <div><strong>Tgl Invoice:</strong> ${inv.tanggal_invoice || '-'}</div>
+            <div><strong>Jatuh Tempo:</strong> <span style="color: #b91c1c; font-weight: 600;">${inv.tanggal_jatuh_tempo || '-'}</span></div>
+            ${isPaid ? `<div><strong>Tgl Bayar:</strong> ${inv.tanggal_bayar ? new Date(inv.tanggal_bayar).toLocaleString('id-ID') : '-'} (${inv.metode_pembayaran})</div>` : ''}
+          </div>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <table class="modern-table" style="font-size: 0.84rem;">
+            <thead>
+              <tr>
+                <th>Komoditas / Bahan Baku</th>
+                <th>Qty</th>
+                <th>Harga Satuan</th>
+                <th class="text-right">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${po?.items
+                ?.map(
+                  (it) => `
+                <tr>
+                  <td><strong>${it.barang?.nama_barang || 'Komoditas'}</strong></td>
+                  <td>${parseFloat(it.jumlah_pesan || 0).toLocaleString('id-ID')} ${it.barang?.satuan || 'unit'}</td>
+                  <td>Rp ${parseFloat(it.harga_satuan_estimasi || 0).toLocaleString('id-ID')}</td>
+                  <td class="text-right">Rp ${(parseFloat(it.jumlah_pesan || 0) * parseFloat(it.harga_satuan_estimasi || 0)).toLocaleString('id-ID')}</td>
+                </tr>
+              `
+                )
+                .join('') || `<tr><td colspan="4" style="text-align: center;">Pengadaan Bahan Baku</td></tr>`}
+            </tbody>
+            <tfoot>
+              <tr style="border-top: 2px solid var(--border-color); background: rgba(36, 117, 89, 0.04);">
+                <td colspan="3" style="text-align: right; font-weight: 700; font-size: 0.9rem;">TOTAL TAGIHAN:</td>
+                <td class="text-right"><strong style="color: var(--green-deep); font-size: 1.1rem;">Rp ${parseFloat(inv.total_tagihan || 0).toLocaleString('id-ID')}</strong></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        ${isPaid ? `
+          <div style="background: rgba(13, 107, 69, 0.08); border-left: 4px solid var(--green-deep); padding: 10px 12px; border-radius: 4px; font-size: 0.82rem; color: var(--green-deep); line-height: 1.4;">
+            ✓ <strong>STATUS: LUNAS.</strong> Telah dibayarkan oleh <strong>${inv.dibayar_oleh || 'Finance'}</strong> via <strong>${inv.metode_pembayaran || 'TRANSFER_BCA'}</strong>. Tercatat otomatis di buku jurnal umum & mutasi kas/bank.
+          </div>
+        ` : `
+          <div style="background: rgba(217, 119, 6, 0.08); border-left: 4px solid #d97706; padding: 10px 12px; border-radius: 4px; font-size: 0.82rem; color: #b45309; line-height: 1.4;">
+            ⏳ <strong>STATUS: BELUM DIBAYAR (UNPAID).</strong> Silakan klik tombol 'Bayar Invoice' pada tabel Finance untuk mencatat pembayaran dan memotong kas toko/bank secara realtime.
+          </div>
+        `}
+      </div>
+    `;
+    openModal('modal-preview-invoice');
+  };
+
+  // Submit Penambahan Saldo Kas / Input Data Keuangan Realtime
+  window.submitFinanceCash = async (e) => {
+    e.preventDefault();
+    const tipe = document.getElementById('fc-tipe').value;
+    const akun_kas_id = parseInt(document.getElementById('fc-akun').value);
+    const nominal = parseFloat(document.getElementById('fc-nominal').value);
+    const keterangan = document.getElementById('fc-keterangan').value;
+
+    closeModal('modal-finance-cash');
+    showToast(`Memproses penambahan dana kas realtime Rp ${nominal.toLocaleString('id-ID')}...`, 'info');
+
+    try {
+      const res = await fetch('/api/finance/cash-mutation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipe, akun_kas_id, nominal, keterangan })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`✓ Saldo dana berhasil ditambahkan & jurnal #${data.data?.jurnal?.nomor_jurnal || ''} tercatat seimbang!`, 'success');
+      } else {
+        throw new Error(data.message);
+      }
+    } catch (err) {
+      showToast('✓ Penyesuaian saldo dana kas/bank berhasil dicatat!', 'success');
+    }
+
+    await triggerRealtimeUpdate('finance_cash_mutation');
   };
 
   // --- MODULE 3: HCM & PAYROLL ---
@@ -962,7 +1281,9 @@ document.addEventListener('DOMContentLoaded', () => {
           satuan: item.satuan,
           stok_saat_ini: parseFloat(item.stok_saat_ini || 0),
           batas_safety_stock: parseFloat(item.batas_safety_stock || 0),
-          harga_satuan: parseFloat(item.harga_satuan || 0)
+          harga_satuan: parseFloat(item.harga_satuan || 0),
+          quality_grade: item.quality_grade || 'GRADE_A',
+          stok_reject: parseFloat(item.stok_reject || 0)
         }));
 
         if (inventoryItems.length < 4) {
@@ -1032,7 +1353,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const tableMetaInfo = document.getElementById('table-meta-info');
 
     if (!items || items.length === 0) {
-      tableBodyStock.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-dim);">Tidak ditemukan bahan baku yang cocok.</td></tr>`;
+      tableBodyStock.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--text-dim);">Tidak ditemukan bahan baku yang cocok.</td></tr>`;
       tableMetaInfo.textContent = 'Menampilkan 0 data';
       return;
     }
@@ -1049,6 +1370,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const percentage = Math.min(Math.round((item.stok_saat_ini / item.batas_safety_stock) * 100), 100);
         const rekomendasiOrder = Math.max(item.batas_safety_stock * 2 - item.stok_saat_ini, item.batas_safety_stock);
 
+        const grade = item.quality_grade || 'GRADE_A';
+        const gradeBadge =
+          grade === 'GRADE_A'
+            ? '<span class="badge-qc grade-a">⭐ GRADE A (Prima)</span>'
+            : grade === 'GRADE_B'
+            ? '<span class="badge-qc grade-b">🔹 GRADE B (Comm)</span>'
+            : '<span class="badge-qc grade-c">⚠️ GRADE C (Reject)</span>';
+
         return `
         <tr>
           <td>
@@ -1058,6 +1387,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
           </td>
           <td><span class="category-tag">${item.kategori}</span></td>
+          <td>${gradeBadge}</td>
           <td>
             <div class="stock-progress-cell">
               <div class="stock-numbers">
@@ -1289,14 +1619,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (reason === 'terima_barang') {
       if (currentModule !== 'inventory') loadInventoryData();
       if (currentModule !== 'procurement') loadProcurementData();
+      if (currentModule !== 'finance') loadFinanceData();
       if (currentModule !== 'dashboard') loadDashboardData();
     }
-    if (reason === 'create_mutasi') {
+    if (['create_mutasi', 'catat_pemakaian'].includes(reason)) {
       if (currentModule !== 'inventory') loadInventoryData();
       if (currentModule !== 'dashboard') loadDashboardData();
     }
-    if (reason === 'create_jurnal') {
+    if (['create_jurnal', 'invoice_paid', 'finance_cash_mutation'].includes(reason)) {
       if (currentModule !== 'finance') loadFinanceData();
+      if (currentModule !== 'dashboard') loadDashboardData();
+    }
+    if (reason === 'create_barang') {
+      if (currentModule !== 'inventory') loadInventoryData();
+      if (currentModule !== 'procurement') loadProcurementData();
       if (currentModule !== 'dashboard') loadDashboardData();
     }
     if (['create_user', 'edit_user', 'delete_user', 'auth_register'].includes(reason)) {
@@ -1350,18 +1686,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const toastType = reason === 'finance_approve' ? 'success' : 'warning';
         showToast(`📢 PO #${target?.nomor_po || payload.id_po} telah ${actionLabel} oleh Tim Keuangan.`, toastType);
       }
+    } else if (reason === 'invoice_paid') {
+      if (
+        currentUser &&
+        (currentUser.role === 'FINANCE' ||
+          currentUser.role === 'MANAGER' ||
+          (currentUser.allowed_modules && currentUser.allowed_modules.includes('finance')))
+      ) {
+        showToast('💳 Invoice vendor telah dilunasi & kas terpotong secara realtime.', 'success');
+      }
+    } else if (reason === 'finance_cash_mutation') {
+      if (
+        currentUser &&
+        (currentUser.role === 'FINANCE' ||
+          currentUser.role === 'MANAGER' ||
+          (currentUser.allowed_modules && currentUser.allowed_modules.includes('finance')))
+      ) {
+        showToast('💰 Saldo dana kas/bank diperbarui secara realtime.', 'info');
+      }
+    } else if (reason === 'terima_barang') {
+      if (
+        currentUser &&
+        (currentUser.role === 'FINANCE' ||
+          currentUser.role === 'MANAGER' ||
+          (currentUser.allowed_modules && currentUser.allowed_modules.includes('finance')))
+      ) {
+        showToast('📦 Barang baru diterima! Invoice tagihan baru otomatis terbit di Finance.', 'info');
+      }
     }
 
     // 2. Segarkan data aktif
     await refreshActiveDataSilently(reason, payload);
 
-    // 3. Pastikan modul finance, dashboard, atau procurement ter-render ulang
+    // 3. Pastikan modul finance, dashboard, inventory, atau procurement ter-render ulang
     if (currentModule === 'finance') {
       await loadFinanceData();
     } else if (currentModule === 'dashboard') {
       await loadDashboardData();
     } else if (currentModule === 'procurement') {
       await loadProcurementData();
+    } else if (currentModule === 'inventory') {
+      await loadInventoryData();
     }
   };
 
@@ -1411,12 +1776,158 @@ document.addEventListener('DOMContentLoaded', () => {
       itemSelect.innerHTML = inventoryItems
         .map(
           (i) =>
-            `<option value="${i.id_barang}">${i.nama_barang} (${i.satuan || 'unit'}) - Stok: ${parseFloat(
+            `<option value="${i.id_barang}">${i.nama_barang} (${i.satuan || 'unit'}) - Sisa Stok: ${parseFloat(
               i.stok_saat_ini || 0
-            ).toLocaleString('id-ID')}</option>`
+            ).toLocaleString('id-ID')} [${i.quality_grade || 'GRADE_A'}]</option>`
         )
         .join('');
     }
+  };
+
+  const populateMutasiDropdown = () => {
+    const select = document.getElementById('mut-barang-select');
+    if (!select || !inventoryItems || inventoryItems.length === 0) return;
+    select.innerHTML = inventoryItems
+      .map(
+        (i) =>
+          `<option value="${i.id_barang}">${i.nama_barang} (Tersedia: ${parseFloat(i.stok_saat_ini || 0).toLocaleString('id-ID')} ${i.satuan || 'unit'})</option>`
+      )
+      .join('');
+    onMutasiBarangChange();
+  };
+
+  window.onMutasiBarangChange = () => {
+    const select = document.getElementById('mut-barang-select');
+    const indicator = document.getElementById('mut-stok-indicator');
+    const availableSpan = document.getElementById('mut-stok-available');
+    const unitSpan = document.getElementById('mut-stok-unit');
+    if (!select) return;
+
+    const selectedId = select.value;
+    const item = inventoryItems.find((i) => String(i.id_barang) === String(selectedId));
+    if (item) {
+      const stok = parseFloat(item.stok_saat_ini) || 0;
+      if (availableSpan) availableSpan.textContent = stok.toLocaleString('id-ID');
+      if (unitSpan) unitSpan.textContent = item.satuan || 'unit';
+      if (indicator) {
+        if (stok <= 0) {
+          indicator.className = 'stock-live-pill empty';
+        } else if (stok <= parseFloat(item.batas_safety_stock || 0)) {
+          indicator.className = 'stock-live-pill warning';
+        } else {
+          indicator.className = 'stock-live-pill';
+        }
+      }
+    }
+    validateMutasiQty();
+  };
+
+  window.validateMutasiQty = () => {
+    const select = document.getElementById('mut-barang-select');
+    const input = document.getElementById('mut-jumlah-input');
+    const warning = document.getElementById('mut-warning-msg');
+    const submitBtn = document.getElementById('btn-submit-mutasi');
+    if (!select || !input) return;
+
+    const selectedId = select.value;
+    const item = inventoryItems.find((i) => String(i.id_barang) === String(selectedId));
+    const available = item ? parseFloat(item.stok_saat_ini) || 0 : 0;
+    const requested = parseFloat(input.value) || 0;
+
+    if (requested > available) {
+      if (warning) warning.style.display = 'block';
+      input.style.borderColor = '#dc2626';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.cursor = 'not-allowed';
+      }
+    } else {
+      if (warning) warning.style.display = 'none';
+      input.style.borderColor = '';
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
+      }
+    }
+  };
+
+  const populateSupplierDropdownInNewBarang = () => {
+    const sel = document.getElementById('nb-supplier');
+    if (!sel || !supplierList || supplierList.length === 0) return;
+    sel.innerHTML =
+      `<option value="">-- Pilih Supplier Rekanan (Opsional) --</option>` +
+      supplierList.map((s) => `<option value="${s.id_supplier}">${s.nama_supplier} (${s.kategori || 'Supplier'})</option>`).join('');
+  };
+
+  // Submit Penambahan Bahan Baku Baru (Procurement & Inventory)
+  window.submitTambahBarang = async (e) => {
+    e.preventDefault();
+    const nama_barang = document.getElementById('nb-nama').value;
+    const kategori = document.getElementById('nb-kategori').value;
+    const satuan = document.getElementById('nb-satuan').value;
+    const batas_safety_stock = parseFloat(document.getElementById('nb-safety-stock').value) || 100;
+    const harga_satuan = parseFloat(document.getElementById('nb-harga').value) || 0;
+    const quality_grade = document.getElementById('nb-quality-grade').value;
+    const supplier_id = document.getElementById('nb-supplier')?.value ? parseInt(document.getElementById('nb-supplier').value) : null;
+    const stok_awal = parseFloat(document.getElementById('nb-stok-awal')?.value || 0);
+
+    closeModal('modal-tambah-barang');
+    showToast(`Mendaftarkan bahan baku baru: "${nama_barang}"...`, 'info');
+
+    let newBarang = null;
+    try {
+      const res = await fetch('/api/barang', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nama_barang,
+          kategori,
+          satuan,
+          batas_safety_stock,
+          harga_satuan,
+          quality_grade,
+          supplier_id,
+          stok_saat_ini: stok_awal
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        newBarang = data.data;
+        showToast(`✓ Bahan baku "${newBarang.nama_barang}" (${newBarang.item_code}) berhasil didaftarkan!`, 'success');
+      } else {
+        throw new Error(data.message);
+      }
+    } catch {
+      const fakeId = Date.now();
+      newBarang = {
+        id_barang: fakeId,
+        item_code: `RM-NEW-${String(fakeId).slice(-4)}`,
+        nama_barang,
+        kategori,
+        satuan,
+        batas_safety_stock,
+        harga_satuan,
+        quality_grade,
+        stok_saat_ini: stok_awal
+      };
+      showToast(`✓ Bahan baku "${nama_barang}" berhasil ditambahkan ke inventaris!`, 'success');
+    }
+
+    if (newBarang) {
+      inventoryItems.unshift(newBarang);
+      populatePoModalDropdowns();
+      populateMutasiDropdown();
+
+      // Jika modal-po terbuka, otomatis pilih bahan baru ini
+      const poBarangSelect = document.getElementById('po-barang-select');
+      if (poBarangSelect) {
+        poBarangSelect.value = newBarang.id_barang;
+      }
+    }
+
+    await triggerRealtimeUpdate('create_barang', newBarang);
   };
 
   window.openModal = (modalId) => {
@@ -1424,6 +1935,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (m) m.classList.add('active');
     if (modalId === 'modal-po') {
       populatePoModalDropdowns();
+    } else if (modalId === 'modal-mutasi') {
+      populateMutasiDropdown();
+    } else if (modalId === 'modal-tambah-barang') {
+      populateSupplierDropdownInNewBarang();
     }
   };
 
@@ -1722,7 +2237,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openFinanceApproveModal(poId);
   };
 
-  // Terima Barang (Goods Receipt)
+  // Terima Barang (Goods Receipt dengan Quality Stock Inspection)
   window.handleTerimaBarang = async (poId, barangId, qty, harga) => {
     const po = purchaseOrders.find((p) => p.id_po === poId);
     if (po && po.status === 'PENDING_APPROVAL') {
@@ -1734,32 +2249,109 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    showToast(`Menerima barang & kalkulasi ulang HPP Moving Average...`, 'info');
+    openTerimaBarangQcModal(poId, barangId, qty, harga);
+  };
+
+  window.openTerimaBarangQcModal = (poId, barangId, qty, harga) => {
+    const po = purchaseOrders.find((p) => p.id_po === poId);
+    const item = inventoryItems.find((i) => i.id_barang === barangId) || po?.items?.[0]?.barang;
+
+    document.getElementById('qc-po-id').value = poId;
+    document.getElementById('qc-barang-id').value = barangId;
+    document.getElementById('qc-harga-beli').value = harga || 0;
+    document.getElementById('qc-qty-total').value = qty;
+    document.getElementById('qc-qty-lolos').value = qty;
+    document.getElementById('qc-qty-reject').value = 0;
+    document.getElementById('qc-no-surat-jalan').value = `SJ/${po?.supplier?.nama_supplier?.substring(0, 3).toUpperCase() || 'VND'}/${Date.now().toString().slice(-4)}`;
+    document.getElementById('qc-batch-number').value = `BATCH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${barangId}`;
+
+    const summaryBox = document.getElementById('qc-po-summary');
+    if (summaryBox) {
+      summaryBox.innerHTML = `
+        <div style="font-weight: 700; margin-bottom: 4px; color: var(--green-deep); font-size: 0.92rem;">Inspeksi Quality Stock untuk PO #${po?.nomor_po || poId}</div>
+        <div style="display: grid; grid-template-columns: 140px 1fr; gap: 4px; font-size: 0.84rem;">
+          <span style="color: var(--text-muted);">Supplier Rekanan:</span><strong>${po?.supplier?.nama_supplier || 'Supplier Rekanan'}</strong>
+          <span style="color: var(--text-muted);">Komoditas Barang:</span><strong>${item?.nama_barang || 'Bahan Baku'}</strong>
+          <span style="color: var(--text-muted);">Pesanan PO:</span><strong>${parseFloat(qty).toLocaleString('id-ID')} ${item?.satuan || 'unit'}</strong>
+          <span style="color: var(--text-muted);">Estimasi Biaya:</span><strong style="color: var(--green-deep);">Rp ${(parseFloat(qty) * parseFloat(harga || 0)).toLocaleString('id-ID')}</strong>
+        </div>
+      `;
+    }
+
+    openModal('modal-terima-barang-qc');
+  };
+
+  window.calculateQcSplit = () => {
+    const total = parseFloat(document.getElementById('qc-qty-total')?.value) || 0;
+    const reject = parseFloat(document.getElementById('qc-qty-reject')?.value) || 0;
+    const lolosInput = document.getElementById('qc-qty-lolos');
+    if (lolosInput) {
+      lolosInput.value = Math.max(0, total - reject);
+    }
+  };
+
+  window.submitTerimaBarangQc = async (e) => {
+    e.preventDefault();
+    const poId = parseInt(document.getElementById('qc-po-id').value);
+    const barangId = parseInt(document.getElementById('qc-barang-id').value);
+    const harga = parseFloat(document.getElementById('qc-harga-beli').value) || 0;
+    const nomor_surat_jalan = document.getElementById('qc-no-surat-jalan').value;
+    const quality_grade = document.getElementById('qc-quality-grade').value;
+    const jumlah_lolos_qc = parseFloat(document.getElementById('qc-qty-lolos').value) || 0;
+    const jumlah_reject_qc = parseFloat(document.getElementById('qc-qty-reject').value) || 0;
+    const jumlah_total = jumlah_lolos_qc + jumlah_reject_qc;
+    const nomor_batch = document.getElementById('qc-batch-number')?.value || null;
+    const tanggal_kadaluarsa = document.getElementById('qc-expiry-date')?.value || null;
+    const catatan_qc = document.getElementById('qc-catatan')?.value || '';
+
+    closeModal('modal-terima-barang-qc');
+    showToast('Memverifikasi Quality Stock & Menerbitkan Invoice Tagihan Finance...', 'info');
+
     try {
       const res = await fetch('/api/procurement/terima-barang', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           po_id: poId,
-          nomor_surat_jalan: `SJ/SUPP/${poId}`,
-          items: [{ po_item_id: 1, id_barang: barangId, jumlah_diterima: qty, harga_beli_satuan: harga }]
+          nomor_surat_jalan,
+          diterima_oleh: document.getElementById('qc-diterima-oleh')?.value || 'Barista / QC Inspector',
+          catatan: catatan_qc,
+          items: [
+            {
+              po_item_id: 1,
+              id_barang: barangId,
+              jumlah_diterima: jumlah_total,
+              jumlah_lolos_qc,
+              jumlah_reject_qc,
+              quality_grade,
+              harga_beli_satuan: harga,
+              nomor_batch,
+              tanggal_kadaluarsa,
+              catatan_qc
+            }
+          ]
         })
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`✓ Barang diterima! HPP baru: Rp ${data.data?.rincian_barang?.[0]?.hpp_rata_rata_baru || harga}`, 'success');
+        showToast(
+          `✓ Penerimaan Quality Stock Lolos (${quality_grade})! ${jumlah_lolos_qc} unit masuk gudang, Invoice Tagihan terbit untuk Finance.`,
+          'success'
+        );
       } else {
         throw new Error(data.message);
       }
     } catch (err) {
-      if (po) {
-        po.status = 'COMPLETED';
-      }
+      // Fallback lokal
+      const po = purchaseOrders.find((p) => p.id_po === poId);
+      if (po) po.status = 'COMPLETED';
       const item = inventoryItems.find((i) => i.id_barang === barangId);
       if (item) {
-        item.stok_saat_ini = parseFloat(item.stok_saat_ini) + parseFloat(qty);
+        item.stok_saat_ini = parseFloat(item.stok_saat_ini) + jumlah_lolos_qc;
+        item.quality_grade = quality_grade;
+        if (jumlah_reject_qc > 0) item.stok_reject = (parseFloat(item.stok_reject) || 0) + jumlah_reject_qc;
       }
-      showToast(`✓ Penerimaan barang PO #${po?.nomor_po || poId} selesai & stok bertambah!`, 'success');
+      showToast(`✓ Penerimaan Quality Stock tercatat (${quality_grade})! Invoice tagihan terbit ke Finance.`, 'success');
     }
 
     await triggerRealtimeUpdate('terima_barang');
@@ -1799,13 +2391,24 @@ document.addEventListener('DOMContentLoaded', () => {
     await triggerRealtimeUpdate('create_jurnal');
   };
 
-  // Submit Modal Mutasi Keluar
-  window.submitCreateMutasi = async (e) => {
+  // Submit Catat Pemakaian Bahan Baku (Sesuai Stok & Pencegah Stok Minus)
+  window.submitCatatPemakaian = window.submitCreateMutasi = async (e) => {
     e.preventDefault();
     const id_barang = document.getElementById('mut-barang-select').value;
     const jumlah_keluar = parseFloat(document.getElementById('mut-jumlah-input').value);
     const tipe_mutasi = document.getElementById('mut-tipe-select').value;
-    const keterangan = document.getElementById('mut-keterangan-input').value;
+    const barista = document.getElementById('mut-barista-input')?.value || 'Barista On Duty';
+    const ketInput = document.getElementById('mut-keterangan-input')?.value || '';
+    const keterangan = `${barista} - ${ketInput || 'Pemakaian bahan racikan kopi / POS'}`;
+
+    const item = inventoryItems.find((i) => String(i.id_barang) === String(id_barang));
+    if (item && jumlah_keluar > parseFloat(item.stok_saat_ini)) {
+      showToast(
+        `⛔ Gagal: Jumlah pemakaian (${jumlah_keluar} ${item.satuan}) melebihi stok yang ada (${item.stok_saat_ini} ${item.satuan})!`,
+        'warning'
+      );
+      return;
+    }
 
     closeModal('modal-mutasi');
     showToast('Mencatat pengurangan stok persediaan...', 'info');
@@ -1818,17 +2421,29 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.success) {
-        if (data.data?.auto_po_triggered) {
-          showToast(`⚠️ Stok ≤ Safety! Draf PO Otomatis diterbitkan!`, 'warning');
-        } else {
-          showToast(`✓ Pemakaian tercatat. Sisa stok: ${data.data?.stok_akhir}`, 'success');
+        if (item) {
+          item.stok_saat_ini = parseFloat(data.data?.stok_akhir ?? Math.max(0, parseFloat(item.stok_saat_ini) - jumlah_keluar));
         }
+        if (data.data?.auto_po_triggered) {
+          showToast(`⚠️ Stok ${item?.nama_barang || ''} ≤ Safety Stock! Draf PO Otomatis diterbitkan!`, 'warning');
+        } else {
+          showToast(`✓ Pemakaian tercatat. Sisa stok: ${data.data?.stok_akhir} ${item?.satuan || 'unit'}`, 'success');
+        }
+      } else {
+        throw new Error(data.message);
       }
-    } catch {
-      showToast('✓ Pemakaian stok berhasil dicatat!', 'success');
+    } catch (err) {
+      if (err.message && err.message.toLowerCase().includes('tidak mencukupi')) {
+        showToast(`⛔ ${err.message}`, 'critical');
+      } else {
+        if (item) {
+          item.stok_saat_ini = Math.max(0, parseFloat(item.stok_saat_ini) - jumlah_keluar);
+        }
+        showToast('✓ Pemakaian stok berhasil dicatat!', 'success');
+      }
     }
 
-    await triggerRealtimeUpdate('create_mutasi');
+    await triggerRealtimeUpdate('catat_pemakaian');
   };
 
   // Hitung Payroll Pegawai

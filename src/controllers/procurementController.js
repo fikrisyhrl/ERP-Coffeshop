@@ -8,12 +8,13 @@ const procurementController = {
    */
   terimaBarang: async (req, res, next) => {
     try {
-      const { po_id, nomor_surat_jalan, diterima_oleh, catatan, items } = req.body;
+      const { po_id, nomor_surat_jalan, diterima_oleh: rawDiterimaOleh, catatan, items } = req.body;
+      const diterima_oleh = rawDiterimaOleh || 'Barista / QC Inspector';
 
-      if (!po_id || !diterima_oleh || !items) {
+      if (!po_id || !items) {
         return res.status(400).json({
           success: false,
-          message: 'po_id, diterima_oleh, dan items wajib diisi'
+          message: 'po_id dan items wajib diisi'
         });
       }
 

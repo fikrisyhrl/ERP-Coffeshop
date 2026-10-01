@@ -29,6 +29,12 @@ const inventoryController = {
 
       return res.status(200).json(hasil);
     } catch (error) {
+      if (error.message && error.message.includes('Stok tidak mencukupi')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message
+        });
+      }
       next(error);
     }
   },

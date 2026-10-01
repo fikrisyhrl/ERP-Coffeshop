@@ -21,4 +21,13 @@ router.get('/pengajuan-po', accountingController.getPengajuanPO);
 router.patch('/pengajuan-po/:id/setujui', accountingController.setujuiPengajuanPO);
 router.patch('/pengajuan-po/:id/tolak', accountingController.tolakPengajuanPO);
 
+// Invoice Tagihan Pembelian Barang PO (Vendor Invoices)
+router.get('/invoices', accountingController.getAllInvoices);
+router.post('/invoices', accountingController.createInvoice);
+router.patch('/invoices/:id/bayar', accountingController.bayarInvoice);
+
+// Saldo Uang Tersedia & Manajemen Data Keuangan Realtime
+router.get('/cash-balance', accountingController.getCashBalance);
+router.post('/cash-mutation', accountingController.catatMutasiKas);
+
 module.exports = router;

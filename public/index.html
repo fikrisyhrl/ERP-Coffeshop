@@ -376,24 +376,36 @@
               <div class="card-icon-wrapper kas-bg">💵</div>
               <div class="card-content">
                 <span class="card-label">Kasir / Kas Toko</span>
-                <h3 class="card-value" id="fin-kas-toko">Rp 9.250.000</h3>
-                <span class="trend-sub">Akun #1-1001</span>
+                <h3 class="card-value" id="fin-kas-toko">Rp 15.000.000</h3>
+                <span class="trend-sub">Akun #1-1001 (Tunai)</span>
               </div>
             </div>
             <div class="kpi-card card-kas">
               <div class="card-icon-wrapper kas-bg">🏦</div>
               <div class="card-content">
                 <span class="card-label">Bank BCA Operasional</span>
-                <h3 class="card-value" id="fin-bank-bca">Rp 75.500.000</h3>
-                <span class="trend-sub">Akun #1-1002</span>
+                <h3 class="card-value" id="fin-bank-bca">Rp 85.000.000</h3>
+                <span class="trend-sub">Akun #1-1002 (Rekening)</span>
               </div>
             </div>
-            <div class="kpi-card card-aset">
-              <div class="card-icon-wrapper aset-bg">📑</div>
+            <div class="kpi-card card-kas" style="border-left: 4px solid var(--green-deep); background: linear-gradient(135deg, rgba(238, 245, 240, 0.95), #ffffff);">
+              <div class="card-icon-wrapper kas-bg" style="background: var(--green-deep); color: #ffffff;">💰</div>
               <div class="card-content">
-                <span class="card-label">Beban Gaji Bulan Ini</span>
-                <h3 class="card-value" id="fin-beban-gaji">Rp 5.030.000</h3>
-                <span class="trend-sub">Akun #6-1001</span>
+                <span class="card-label">Total Uang Tersedia</span>
+                <h3 class="card-value" id="fin-total-uang" style="color: var(--green-deep);">Rp 100.000.000</h3>
+                <button class="btn btn-primary btn-sm" onclick="openModal('modal-finance-cash')" style="margin-top: 5px; padding: 3px 8px; font-size: 0.74rem;">
+                  + Input / Tambah Dana
+                </button>
+              </div>
+            </div>
+            <div class="kpi-card card-warning cursor-pointer" onclick="switchFinanceTab('invoice')" style="border-left: 4px solid #ea580c;">
+              <div class="card-icon-wrapper warning-bg" style="background: #ffedd5; color: #c2410c;">📄</div>
+              <div class="card-content">
+                <span class="card-label">Tagihan Invoice PO (Unpaid)</span>
+                <h3 class="card-value text-warning" id="fin-kpi-unpaid-inv">0 Tagihan</h3>
+                <div class="card-trend negative">
+                  <span id="fin-kpi-unpaid-nominal">Rp 0 Perlu Dibayar</span>
+                </div>
               </div>
             </div>
             <div class="kpi-card card-warning cursor-pointer" onclick="switchFinanceTab('approval')" id="fin-kpi-card-pending" style="border-left: 4px solid var(--status-warning);">
@@ -407,12 +419,12 @@
                 </div>
               </div>
             </div>
-            <div class="kpi-card card-pegawai">
-              <div class="card-icon-wrapper pegawai-bg">⚖️</div>
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">📑</div>
               <div class="card-content">
-                <span class="card-label">Keseimbangan Pembukuan</span>
-                <h3 class="card-value text-safe">SEIMBANG</h3>
-                <span class="trend-sub">&Sigma; Debet == &Sigma; Kredit</span>
+                <span class="card-label">Beban Gaji Bulan Ini</span>
+                <h3 class="card-value" id="fin-beban-gaji">Rp 5.030.000</h3>
+                <span class="trend-sub">Akun #6-1001</span>
               </div>
             </div>
           </div>
@@ -436,9 +448,11 @@
             <div class="sub-tabs">
               <button class="sub-tab active" onclick="switchFinanceTab('jurnal')">📖 Buku Jurnal Umum (General Ledger)</button>
               <button class="sub-tab" onclick="switchFinanceTab('coa')">🗂️ Chart of Accounts (CoA)</button>
-              <button class="sub-tab" onclick="switchFinanceTab('approval')">💳 Persetujuan Pembelian (Procurement Approval) <span class="tab-badge" id="fin-pending-badge">0</span></button>
+              <button class="sub-tab" onclick="switchFinanceTab('approval')">💳 Persetujuan PO <span class="tab-badge" id="fin-pending-badge">0</span></button>
+              <button class="sub-tab" onclick="switchFinanceTab('invoice')">📄 Invoice &amp; Tagihan PO <span class="tab-badge" id="fin-invoice-badge">0</span></button>
             </div>
             <div class="tab-actions">
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-finance-cash')">💰 + Input Saldo / Pemasukan Kas</button>
               <button class="btn btn-secondary btn-sm" onclick="openModal('modal-jurnal')">+ Jurnal Manual</button>
             </div>
           </div>
@@ -542,6 +556,45 @@
                     </tr>
                   </thead>
                   <tbody id="table-body-finance-approval">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 4: Invoice & Tagihan Pembelian Barang -->
+          <div class="sub-panel hidden" id="panel-finance-invoice">
+            <div class="table-section">
+              <div class="table-header" style="flex-wrap: wrap; gap: 12px;">
+                <div class="table-title-group">
+                  <div class="table-badge">VENDOR INVOICES</div>
+                  <h3 class="table-title">Daftar Faktur Tagihan Supplier (Invoice Barang)</h3>
+                  <p class="table-subtitle">Faktur tagihan pengadaan bahan baku yang diterbitkan dari PO yang telah disetujui. Tim Finance dapat memproses pembayaran secara realtime dengan memotong kas/bank.</p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <select id="filter-invoice-status" class="filter-select" style="width: 190px;" onchange="loadInvoicesData()">
+                    <option value="ALL">Semua Status Invoice</option>
+                    <option value="UNPAID" selected>Belum Dibayar (UNPAID)</option>
+                    <option value="PAID">Sudah Lunas (PAID)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-finance-invoices">
+                  <thead>
+                    <tr>
+                      <th>NO. INVOICE &amp; TANGGAL</th>
+                      <th>NOMOR PO &amp; SUPPLIER</th>
+                      <th>RINCIAN KOMODITAS</th>
+                      <th>JATUH TEMPO</th>
+                      <th>TOTAL TAGIHAN</th>
+                      <th>STATUS BAYAR</th>
+                      <th>INFORMASI PELUNASAN</th>
+                      <th class="text-right">TINDAKAN FINANCE</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-finance-invoices">
                     <!-- Populated by JS -->
                   </tbody>
                 </table>
@@ -924,7 +977,8 @@
               <button class="sub-tab" onclick="switchInventoryTab('mutasi')">📜 Riwayat Mutasi Stok (Kartu Stok)</button>
             </div>
             <div class="tab-actions">
-              <button class="btn btn-secondary btn-sm" onclick="openModal('modal-mutasi')">- Catat Pemakaian (Out)</button>
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-tambah-barang')">✨ + Tambah Bahan Baku Baru</button>
+              <button class="btn btn-secondary btn-sm" onclick="openModal('modal-mutasi')">📉 - Catat Pemakaian Bahan</button>
             </div>
           </div>
 
@@ -934,8 +988,8 @@
               <div class="table-header">
                 <div class="table-title-group">
                   <div class="table-badge">INVENTORY ALERT</div>
-                  <h3 class="table-title">Daftar Peringatan Safety Stock Bahan Baku</h3>
-                  <p class="table-subtitle">Barang yang stok fisiknya telah berada di bawah batas minimum dan harus segera dipesan ke supplier.</p>
+                  <h3 class="table-title">Daftar Peringatan Safety Stock &amp; Quality Control</h3>
+                  <p class="table-subtitle">Barang yang stok fisiknya telah berada di bawah batas minimum dan pengawasan mutu persediaan (Quality Stock Grade A/B).</p>
                 </div>
 
                 <div class="table-actions">
@@ -950,9 +1004,10 @@
                   <select id="filter-kategori" class="filter-select">
                     <option value="ALL">Semua Kategori</option>
                     <option value="Coffee Beans">Coffee Beans</option>
-                    <option value="Dairy">Dairy & Milk</option>
-                    <option value="Syrup">Syrups & Sauces</option>
+                    <option value="Dairy">Dairy &amp; Milk</option>
+                    <option value="Syrup">Syrups &amp; Sauces</option>
                     <option value="Packaging">Packaging</option>
+                    <option value="Powder & Flavor">Powder &amp; Flavor</option>
                   </select>
                 </div>
               </div>
@@ -962,8 +1017,9 @@
                 <table class="modern-table" id="table-safety-stock">
                   <thead>
                     <tr>
-                      <th>KODE & NAMA BARANG</th>
+                      <th>KODE &amp; NAMA BARANG</th>
                       <th>KATEGORI</th>
+                      <th>MUTU (QUALITY STOCK)</th>
                       <th>STOK SAAT INI</th>
                       <th>BATAS SAFETY</th>
                       <th>STATUS PERSEDIAAN</th>
@@ -1143,8 +1199,13 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Bahan Baku yang Dipesan</label>
-          <select id="po-barang-select" class="form-control" required>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin-bottom: 0;">Bahan Baku yang Dipesan</label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-tambah-barang')" style="padding: 2px 8px; font-size: 0.74rem; color: var(--green-deep); font-weight: 700;">
+              ✨ + Tambah Bahan Baku Baru
+            </button>
+          </div>
+          <select id="po-barang-select" class="form-control" required onchange="onPoBarangChange()">
             <option value="1">Arabica House Blend 70/30 (gr)</option>
             <option value="2">Greenfields Fresh Milk Pasteurized (ml)</option>
             <option value="3">Monin Salted Caramel Syrup (ml)</option>
@@ -1270,42 +1331,301 @@
     </div>
   </div>
 
-  <!-- Modal Catat Mutasi Keluar -->
+  <!-- Modal Catat Mutasi Keluar & Pemakaian Bahan Baku -->
   <div class="modal-backdrop" id="modal-mutasi">
     <div class="modal-box">
       <div class="modal-header">
-        <h3>📉 Catat Pemakaian Bahan Baku (Mutasi Keluar)</h3>
+        <h3>📉 Catat Pemakaian Bahan Baku (Sesuai Stok)</h3>
         <button class="modal-close" onclick="closeModal('modal-mutasi')">&times;</button>
       </div>
-      <form id="form-create-mutasi" onsubmit="submitCreateMutasi(event)">
+      <form id="form-create-mutasi" onsubmit="submitCatatPemakaian(event)">
         <div class="form-group">
-          <label>Pilih Bahan Baku</label>
-          <select id="mut-barang-select" class="form-control" required>
-            <option value="1">Arabica House Blend 70/30 (gr)</option>
-            <option value="2">Greenfields Fresh Milk (ml)</option>
-            <option value="3">Monin Salted Caramel Syrup (ml)</option>
+          <label>Pilih Bahan Baku yang Digunakan</label>
+          <select id="mut-barang-select" class="form-control" required onchange="onMutasiBarangChange()">
+            <!-- Populated dynamically by JS -->
           </select>
+          <div id="mut-stok-indicator" class="stock-live-pill">
+            📦 Stok Tersedia Saat Ini: <span id="mut-stok-available" style="font-weight: 800; color: var(--green-deep);">0</span> <span id="mut-stok-unit">unit</span>
+          </div>
         </div>
         <div class="form-grid-2">
           <div class="form-group">
-            <label>Jumlah Keluar</label>
-            <input type="number" id="mut-jumlah-input" class="form-control" placeholder="Contoh: 500" required min="1">
+            <label>Jumlah Pemakaian</label>
+            <input type="number" id="mut-jumlah-input" class="form-control" placeholder="Contoh: 250" required min="0.01" step="any" oninput="validateMutasiQty()">
+            <div id="mut-warning-msg" class="stock-exceeded-alert">
+              ⚠️ Jumlah pemakaian melebihi stok yang ada! Silakan kurangi jumlah pemakaian.
+            </div>
           </div>
           <div class="form-group">
-            <label>Tipe Mutasi</label>
+            <label>Keperluan Pemakaian</label>
             <select id="mut-tipe-select" class="form-control" required>
-              <option value="OUT_SALES_POS">Pemakaian Kasir (Penjualan Kopi)</option>
-              <option value="OUT_WASTE">Waste / Biji Kopi Rusak / Kalibrasi</option>
+              <option value="OUT_SALES_POS">Pemakaian Shift Barista (Racikan Kopi / POS)</option>
+              <option value="OUT_WASTE">Waste / Biji Kopi Rusak / Kalibrasi Grinder</option>
+              <option value="OUT_ADJUSTMENT">Penyesuaian Fisik Stok Opname</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nama Barista / Penanggung Jawab</label>
+            <input type="text" id="mut-barista-input" class="form-control" placeholder="Contoh: Dimas Pratama (Head Barista)" value="Barista On Duty" required>
+          </div>
+          <div class="form-group">
+            <label>Keterangan / Jam Shift</label>
+            <input type="text" id="mut-keterangan-input" class="form-control" placeholder="Contoh: Pemakaian shift pagi untuk 50 cup latte">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mutasi')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-mutasi">Simpan Catatan Pemakaian</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Bahan Baku Baru (Custom Raw Material) -->
+  <div class="modal-backdrop" id="modal-tambah-barang">
+    <div class="modal-box" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3>✨ Tambah Bahan Baku Baru ke Inventaris</h3>
+        <button class="modal-close" onclick="closeModal('modal-tambah-barang')">&times;</button>
+      </div>
+      <form id="form-tambah-barang" onsubmit="submitTambahBarang(event)">
+        <div class="form-group">
+          <label>Nama Bahan Baku Baru *</label>
+          <input type="text" id="nb-nama" class="form-control" placeholder="Contoh: Matcha Powder Ceremonial Uji" required>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Kategori Bahan *</label>
+            <select id="nb-kategori" class="form-control" required>
+              <option value="Coffee Beans">Coffee Beans (Biji Kopi)</option>
+              <option value="Dairy">Dairy &amp; Fresh Milk</option>
+              <option value="Syrup">Syrups &amp; Sauces</option>
+              <option value="Powder & Flavor">Powder &amp; Flavor (Bubuk)</option>
+              <option value="Packaging">Packaging &amp; Cup</option>
+              <option value="Lainnya">Lainnya / Bahan Pendukung</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Satuan Pengukuran *</label>
+            <select id="nb-satuan" class="form-control" required>
+              <option value="gr">gr (Gram)</option>
+              <option value="ml">ml (Mililiter)</option>
+              <option value="pcs">pcs (Pieces / Lembar)</option>
+              <option value="kg">kg (Kilogram)</option>
+              <option value="liter">liter (Liter)</option>
+              <option value="botol">botol (Botol)</option>
+              <option value="pack">pack (Pack)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Batas Safety Stock Minimum *</label>
+            <input type="number" id="nb-safety-stock" class="form-control" placeholder="Contoh: 1000" required min="1">
+          </div>
+          <div class="form-group">
+            <label>Estimasi Harga Pokok / Beli Satuan (Rp) *</label>
+            <input type="number" id="nb-harga" class="form-control" placeholder="Contoh: 350" required min="1">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Quality Grade Default</label>
+            <select id="nb-quality-grade" class="form-control" required>
+              <option value="GRADE_A" selected>⭐ Grade A (Specialty / Prima)</option>
+              <option value="GRADE_B">🔹 Grade B (Commercial Standard)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Supplier Rekanan Utama</label>
+            <select id="nb-supplier" class="form-control">
+              <!-- Populated dynamically -->
             </select>
           </div>
         </div>
         <div class="form-group">
-          <label>Keterangan</label>
-          <input type="text" id="mut-keterangan-input" class="form-control" placeholder="Contoh: Pemakaian shift siang">
+          <label>Stok Awal Fisik Saat Ini (Opsional)</label>
+          <input type="number" id="nb-stok-awal" class="form-control" placeholder="0 jika belum ada fisik barang di gudang" value="0" min="0">
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mutasi')">Batal</button>
-          <button type="submit" class="btn btn-primary">Catat Pemakaian</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-tambah-barang')">Batal</button>
+          <button type="submit" class="btn btn-primary">+ Daftarkan Bahan Baku</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Pembayaran Invoice Tagihan Barang (Finance) -->
+  <div class="modal-backdrop" id="modal-pay-invoice">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>💳 Pembayaran Invoice Pembelian Bahan Baku</h3>
+        <button class="modal-close" onclick="closeModal('modal-pay-invoice')">&times;</button>
+      </div>
+      <form id="form-pay-invoice" onsubmit="submitPayInvoice(event)">
+        <input type="hidden" id="pay-inv-id">
+        <div id="pay-inv-summary" style="background: var(--green-sage-bg); border: 1px solid var(--border-highlight); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: var(--text-heading);">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-group">
+          <label>Pilih Sumber Rekening / Kas Pengeluaran *</label>
+          <select id="pay-inv-akun-kas" class="form-control" required>
+            <option value="2" selected>Bank BCA Operasional (Akun #1-1002)</option>
+            <option value="1">Kas Toko / Kasir Tunai (Akun #1-1001)</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Metode Pembayaran</label>
+            <select id="pay-inv-metode" class="form-control" required>
+              <option value="TRANSFER_BCA">Transfer Bank BCA</option>
+              <option value="KAS_TUNAI">Tunai / Cash Toko</option>
+              <option value="GIRO">Cek / Giro Bank</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Dibayar Oleh (Staf/Finance)</label>
+            <input type="text" id="pay-inv-dibayar-oleh" class="form-control" value="Finance Specialist" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan Pembayaran / No Referensi Transfer</label>
+          <input type="text" id="pay-inv-catatan" class="form-control" placeholder="Contoh: Bukti Transfer BCA Ref #8821901">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pay-invoice')">Batal</button>
+          <button type="submit" class="btn btn-primary" style="background: var(--green-deep);">Konfirmasi &amp; Bayar Lunas</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Input / Tambah Data Keuangan & Saldo Kas Realtime -->
+  <div class="modal-backdrop" id="modal-finance-cash">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>💰 Input / Penyesuaian Dana Kas &amp; Bank Realtime</h3>
+        <button class="modal-close" onclick="closeModal('modal-finance-cash')">&times;</button>
+      </div>
+      <form id="form-finance-cash" onsubmit="submitFinanceCash(event)">
+        <div class="form-group">
+          <label>Jenis Transaksi Keuangan *</label>
+          <select id="fc-tipe" class="form-control" required>
+            <option value="PEMASUKAN_MODAL" selected>Setoran Modal Pemilik / Tambahan Dana Operasional</option>
+            <option value="PENJUALAN_KASIR">Pemasukan Penjualan Harian Kasir Outlet</option>
+            <option value="SET_SALDO_AWAL">Penetapan Saldo Awal Kas / Bank</option>
+            <option value="PENDAPATAN_LAIN">Pendapatan Operasional Lainnya</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Akun Tujuan Kas/Bank *</label>
+            <select id="fc-akun" class="form-control" required>
+              <option value="2" selected>Bank BCA Operasional (Akun #1-1002)</option>
+              <option value="1">Kas Toko / Kasir (Akun #1-1001)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nominal Dana (Rp) *</label>
+            <input type="number" id="fc-nominal" class="form-control" placeholder="Contoh: 10000000" required min="1000" step="1000">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Keterangan / Sumber Dana Transaksi *</label>
+          <input type="text" id="fc-keterangan" class="form-control" placeholder="Contoh: Injeksi modal pemilik outlet atau omset kasir tanggal hari ini" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-finance-cash')">Batal</button>
+          <button type="submit" class="btn btn-primary">+ Simpan &amp; Perbarui Saldo Uang</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Preview / Cetak Faktur Invoice -->
+  <div class="modal-backdrop" id="modal-preview-invoice">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3>📄 Faktur Invoice Pembelian Bahan Baku</h3>
+        <button class="modal-close" onclick="closeModal('modal-preview-invoice')">&times;</button>
+      </div>
+      <div id="invoice-preview-container">
+        <!-- Populated dynamically by JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-preview-invoice')">Tutup</button>
+        <button type="button" class="btn btn-primary" onclick="window.print()">🖨️ Cetak Faktur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Terima Barang & Quality Stock Inspection (QC) -->
+  <div class="modal-backdrop" id="modal-terima-barang-qc">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>🔍 Penerimaan Barang &amp; Inspeksi Kualitas (Quality Stock)</h3>
+        <button class="modal-close" onclick="closeModal('modal-terima-barang-qc')">&times;</button>
+      </div>
+      <form id="form-terima-barang-qc" onsubmit="submitTerimaBarangQc(event)">
+        <input type="hidden" id="qc-po-id">
+        <input type="hidden" id="qc-barang-id">
+        <input type="hidden" id="qc-harga-beli">
+        <div id="qc-po-summary" style="background: var(--green-sage-bg); border: 1px solid var(--border-highlight); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: var(--text-heading);">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nomor Surat Jalan Vendor</label>
+            <input type="text" id="qc-no-surat-jalan" class="form-control" placeholder="Contoh: SJ-2026-X88" required>
+          </div>
+          <div class="form-group">
+            <label>Diterima Oleh (Barista/Staff)</label>
+            <input type="text" id="qc-diterima-oleh" class="form-control" value="Barista / QC Inspector" required>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Hasil Uji Quality Stock (Grade Mutu) *</label>
+            <select id="qc-quality-grade" class="form-control" required>
+              <option value="GRADE_A" selected>⭐ Grade A (Specialty / Prima - 100% Lolos)</option>
+              <option value="GRADE_B">🔹 Grade B (Commercial Standard)</option>
+              <option value="GRADE_C">⚠️ Grade C (Substandard / Karantina)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Jumlah Fisik Total Diterima</label>
+            <input type="number" id="qc-qty-total" class="form-control" required min="1" step="any" oninput="calculateQcSplit()">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label style="color: var(--green-deep); font-weight: 700;">Jumlah Lolos QC (Masuk Stok Gudang)</label>
+            <input type="number" id="qc-qty-lolos" class="form-control" required min="0" step="any">
+          </div>
+          <div class="form-group">
+            <label style="color: #b91c1c; font-weight: 700;">Jumlah Reject / Cacat / Basi (Retur)</label>
+            <input type="number" id="qc-qty-reject" class="form-control" value="0" min="0" step="any">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nomor Batch Roasting / Pabrik</label>
+            <input type="text" id="qc-batch-number" class="form-control" placeholder="Contoh: BATCH-ROAST-991">
+          </div>
+          <div class="form-group">
+            <label>Tanggal Kadaluarsa (Expiry Date)</label>
+            <input type="date" id="qc-expiry-date" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan Uji Organoleptik &amp; Fisik Barista</label>
+          <textarea id="qc-catatan" class="form-control" rows="2" placeholder="Kemasan tersegel rapi, aroma harum khas arabica gayo, tidak ada kelembaban berlebih..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-terima-barang-qc')">Batal</button>
+          <button type="submit" class="btn btn-primary" style="background: var(--green-deep);">✓ Simpan Penerimaan &amp; Terbitkan Invoice Tagihan</button>
         </div>
       </form>
     </div>

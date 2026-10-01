@@ -1917,5 +1917,217 @@ body {
   gap: 8px;
 }
 
+/* ============================================================== */
+/* QUALITY STOCK (QC) BADGES                                     */
+/* ============================================================== */
+.badge-qc {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.badge-qc.grade-a {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-qc.grade-b {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.badge-qc.grade-c,
+.badge-qc.reject {
+  background-color: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* ============================================================== */
+/* VENDOR INVOICE BADGES & ACTIONS                                */
+/* ============================================================== */
+.badge-invoice-unpaid {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background-color: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #ffedd5;
+}
+
+.badge-invoice-paid {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.btn-pay-invoice {
+  background-color: var(--green-deep);
+  color: #ffffff;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-pay-invoice:hover {
+  background-color: var(--green-forest);
+  box-shadow: 0 4px 10px rgba(10, 41, 30, 0.25);
+}
+
+.btn-view-voucher {
+  background-color: #f1f5f9;
+  color: var(--text-heading);
+  border: 1px solid #cbd5e1;
+  padding: 5px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-view-voucher:hover {
+  background-color: #e2e8f0;
+}
+
+/* Live Stock Indicator in Modals */
+.stock-live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: var(--green-sage-bg);
+  border: 1px solid var(--border-highlight);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--green-deep);
+  margin-top: 6px;
+}
+
+.stock-exceeded-alert {
+  padding: 8px 12px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  color: #991b1b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-top: 6px;
+  display: none;
+}
+
+/* Invoice Voucher Card Layout */
+.invoice-voucher-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 20px;
+  font-family: inherit;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.voucher-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px dashed #cbd5e1;
+  padding-bottom: 16px;
+  margin-bottom: 16px;
+}
+
+.voucher-brand h2 {
+  font-size: 1.25rem;
+  color: var(--green-deep);
+  margin-bottom: 4px;
+}
+
+.voucher-brand p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.voucher-meta {
+  text-align: right;
+}
+
+.voucher-meta .voucher-no {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-heading);
+}
+
+.voucher-meta .voucher-date {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+}
+
+.voucher-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+}
+
+.voucher-table th {
+  background: #f8fafc;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 0.78rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.voucher-table td {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.voucher-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: var(--green-sage-bg);
+  border-radius: 8px;
+  margin-top: 14px;
+}
+
+.voucher-total-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-heading);
+}
+
+.voucher-total-val {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--green-deep);
+}
+
 
 

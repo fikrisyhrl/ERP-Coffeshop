@@ -84,6 +84,18 @@ const Barang = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: true,
       comment: 'Supplier utama yang ditunjuk untuk auto-order bahan baku ini'
+    },
+    quality_grade: {
+      type: DataTypes.STRING(30),
+      allowNull: false,
+      defaultValue: 'GRADE_A',
+      comment: 'GRADE_A (Specialty/Prima), GRADE_B (Standard), GRADE_C (Karantina/Reject)'
+    },
+    stok_reject: {
+      type: DataTypes.DECIMAL(12, 3),
+      allowNull: false,
+      defaultValue: 0.000,
+      comment: 'Total stok yang ditolak saat inspeksi QC / rusak'
     }
   },
   {

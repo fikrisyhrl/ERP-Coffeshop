@@ -42,6 +42,29 @@ const GoodsReceiptItem = sequelize.define(
     tanggal_kadaluarsa: {
       type: DataTypes.DATEONLY,
       comment: 'Krusial untuk fresh milk, puree, beans'
+    },
+    quality_grade: {
+      type: DataTypes.STRING(30),
+      allowNull: false,
+      defaultValue: 'GRADE_A',
+      comment: 'GRADE_A, GRADE_B, GRADE_C'
+    },
+    jumlah_lolos_qc: {
+      type: DataTypes.DECIMAL(12, 3),
+      allowNull: false,
+      defaultValue: 0.000,
+      comment: 'Jumlah yang memenuhi standar mutu dan masuk ke stok aktif'
+    },
+    jumlah_reject_qc: {
+      type: DataTypes.DECIMAL(12, 3),
+      allowNull: false,
+      defaultValue: 0.000,
+      comment: 'Jumlah yang gagal inspeksi mutu (cacat / basi / retur)'
+    },
+    catatan_qc: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+      comment: 'Hasil uji organoleptik / fisik dari barista / QC'
     }
   },
   {
