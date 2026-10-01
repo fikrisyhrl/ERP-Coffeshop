@@ -279,7 +279,7 @@ Content-Type: application/json
 ### 6.5 Ambil Daftar Semua User (Manager Only)
 GET {{baseUrl}}/users
 
-### 6.6 FITUR CREATE USER: Manager Membuat Pengguna Baru
+### 6.6 FITUR CREATE USER: Manager Membuat Pengguna Baru (CRUD - Create)
 POST {{baseUrl}}/users
 Content-Type: application/json
 
@@ -289,5 +289,33 @@ Content-Type: application/json
   "password": "password123",
   "role": "FINANCE"
 }
+
+### 6.7 FITUR REGISTER AKUN: Pendaftaran Pengguna Baru Publik
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "nama_lengkap": "Andi Saputra",
+  "username": "andi_hr",
+  "password": "password123",
+  "role": "HR"
+}
+
+### 6.8 Detail User Berdasarkan ID (CRUD - Read Single)
+GET {{baseUrl}}/users/1
+
+### 6.9 FITUR UPDATE USER: Edit Data Pengguna (CRUD - Update)
+PUT {{baseUrl}}/users/2
+Content-Type: application/json
+
+{
+  "nama_lengkap": "Budi Finance Updated",
+  "role": "FINANCE",
+  "is_active": true
+}
+
+### 6.10 FITUR DELETE USER: Hapus Pengguna (CRUD - Delete)
+DELETE {{baseUrl}}/users/5
+
 
 

@@ -21,15 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let systemUsers = [];
 
   // User State & RBAC Permissions
-  let currentUser = JSON.parse(localStorage.getItem('kafeina_erp_user') || 'null') || {
-    id_user: 1,
-    nama_lengkap: 'Fikri (Store Manager & Owner)',
-    username: 'manager',
-    role: 'MANAGER',
-    role_name: 'Store Manager & Owner',
-    allowed_modules: ['dashboard', 'finance', 'hcm', 'procurement', 'inventory', 'users'],
-    can_manage_users: true
-  };
+  let currentUser = JSON.parse(localStorage.getItem('kafeina_erp_user') || 'null');
 
   // Data Dummy Cadangan (Fallback jika backend belum terisi lengkap)
   const defaultMockItems = [
@@ -217,6 +209,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // 4. ROLE-BASED ACCESS CONTROL (RBAC) & VIEW SWITCHER
   // ==============================================================
   window.applyRolePermissions = () => {
+    if (!currentUser) {
+      const overlay = document.getElementById('auth-overlay');
+      if (overlay) overlay.classList.remove('hidden');
+      return;
+    }
+
     // 1. Update Profile Card & Topbar
     const avatarEl = document.getElementById('current-user-avatar');
     const nameEl = document.getElementById('current-user-name');
@@ -253,8 +251,14 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   window.switchModule = (targetModule) => {
+    if (!currentUser) {
+      const overlay = document.getElementById('auth-overlay');
+      if (overlay) overlay.classList.remove('hidden');
+      return;
+    }
+
     // Validasi Izin Akses Modul berdasarkan Role Pengguna
-    if (currentUser && currentUser.allowed_modules && !currentUser.allowed_modules.includes(targetModule)) {
+    if (currentUser.allowed_modules && !currentUser.allowed_modules.includes(targetModule)) {
       window.showToast(`⛔ Akses Ditolak: Akun Anda (${currentUser.role}) tidak diizinkan membuka modul ${targetModule.toUpperCase()}!`, 'warning');
       return;
     }
@@ -1517,10 +1521,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     tableBodyUsers.innerHTML = systemUsers
       .map((u) => {
-        const canDelete = u.username !== 'manager' && u.id_user !== currentUser.id_user;
+        const editBtn = `<button class="btn btn-secondary btn-sm" onclick="openEditUserModal(${u.id_user})" style="margin-right: 4px;">✏️ Edit</button>`;
+        const canDelete = u.username !== 'manager' && (!currentUser || u.id_user !== currentUser.id_user);
         const deleteBtn = canDelete
           ? `<button class="btn btn-secondary btn-sm" style="color: var(--status-critical); border-color: rgba(220, 38, 38, 0.3);" onclick="handleDeleteUser(${u.id_user}, '${u.username}')">🗑️ Hapus</button>`
-          : `<span style="font-size: 0.75rem; color: var(--text-dim); font-style: italic;">Akun Inti / Aktif</span>`;
+          : `<span style="font-size: 0.75rem; color: var(--text-dim); font-style: italic;">Akun Inti</span>`;
 
         return `
           <tr>
@@ -1534,15 +1539,15 @@ document.addEventListener('DOMContentLoaded', () => {
             <td><code>${u.username}</code></td>
             <td>${roleBadges[u.role] || u.role}</td>
             <td>${roleModules[u.role] || '-'}</td>
-            <td><span class="badge-status safe">AKTIF</span></td>
-            <td>${deleteBtn}</td>
+            <td><span class="badge-status ${u.is_active ? 'safe' : 'danger'}">${u.is_active ? 'AKTIF' : 'NONAKTIF'}</span></td>
+            <td>${editBtn}${deleteBtn}</td>
           </tr>
         `;
       })
       .join('');
   };
 
-  // Submit Buat User Baru (Manager Only)
+  // Submit Buat User Baru (Manager Only - CRUD Create)
   window.submitCreateUser = async (e) => {
     e.preventDefault();
     const nama_lengkap = document.getElementById('usr-nama-input').value.trim();
@@ -1576,7 +1581,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Hapus User
+  // Buka Modal Edit Data User (CRUD Update)
+  window.openEditUserModal = async (id) => {
+    let user = systemUsers.find((u) => u.id_user === id);
+    if (!user) {
+      try {
+        const res = await fetch(`/api/users/${id}`);
+        const data = await res.json();
+        if (data.success && data.data) user = data.data;
+      } catch (err) {
+        console.warn('Gagal fetch data user:', err);
+      }
+    }
+
+    if (!user) {
+      showToast('Data user tidak ditemukan', 'warning');
+      return;
+    }
+
+    document.getElementById('edit-usr-id').value = user.id_user;
+    document.getElementById('edit-usr-username').value = user.username;
+    document.getElementById('edit-usr-nama').value = user.nama_lengkap;
+    document.getElementById('edit-usr-role').value = user.role;
+    document.getElementById('edit-usr-status').value = user.is_active ? 'true' : 'false';
+    document.getElementById('edit-usr-password').value = '';
+
+    openModal('modal-edit-user');
+  };
+
+  // Submit Edit User (CRUD Update)
+  window.submitEditUser = async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('edit-usr-id').value;
+    const nama_lengkap = document.getElementById('edit-usr-nama').value.trim();
+    const role = document.getElementById('edit-usr-role').value;
+    const is_active = document.getElementById('edit-usr-status').value === 'true';
+    const password = document.getElementById('edit-usr-password').value;
+
+    const payload = { nama_lengkap, role, is_active };
+    if (password && password.trim().length >= 4) {
+      payload.password = password.trim();
+    }
+
+    const btn = document.getElementById('btn-submit-edit-user');
+    if (btn) btn.disabled = true;
+
+    try {
+      const res = await fetch(`/api/users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        closeModal('modal-edit-user');
+        showToast(`✓ ${data.message}`, 'success');
+        loadUsersData();
+
+        // Jika mengedit user yang sedang login, update sesi aktif
+        if (currentUser && currentUser.id_user == id) {
+          currentUser.nama_lengkap = data.data.nama_lengkap;
+          currentUser.role = data.data.role;
+          localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
+          applyRolePermissions();
+        }
+      } else {
+        showToast(`✗ Gagal update: ${data.message}`, 'warning');
+      }
+    } catch {
+      showToast('✗ Terjadi kesalahan koneksi saat mengupdate user', 'critical');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
+  // Hapus User (CRUD Delete)
   window.handleDeleteUser = async (id, username) => {
     if (!confirm(`Apakah Anda yakin ingin menghapus user '${username}'?`)) return;
 
@@ -1610,6 +1690,96 @@ document.addEventListener('DOMContentLoaded', () => {
     box.innerHTML = descriptions[role] || '';
   };
 
+  // ==============================================================
+  // 8. AUTHENTICATION & LOGIN GATEKEEPER LOGIC
+  // ==============================================================
+
+  // Tab Switcher antara Login dan Register pada Overlay
+  window.switchAuthTab = (tab) => {
+    const btnLogin = document.getElementById('tab-btn-login');
+    const btnReg = document.getElementById('tab-btn-register');
+    const secLogin = document.getElementById('auth-section-login');
+    const secReg = document.getElementById('auth-section-register');
+
+    if (tab === 'register') {
+      btnLogin.classList.remove('active');
+      btnReg.classList.add('active');
+      secLogin.style.display = 'none';
+      secReg.style.display = 'block';
+    } else {
+      btnReg.classList.remove('active');
+      btnLogin.classList.add('active');
+      secReg.style.display = 'none';
+      secLogin.style.display = 'block';
+    }
+  };
+
+  // Submit Login dari Auth Overlay
+  window.submitAuthLogin = async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('auth-login-username').value.trim();
+    const password = document.getElementById('auth-login-password').value;
+    const btn = document.getElementById('btn-auth-login');
+    if (btn) btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        currentUser = data.data;
+        localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
+        document.getElementById('auth-overlay').classList.add('hidden');
+        applyRolePermissions();
+        showToast(`✓ Selamat datang kembali, ${currentUser.nama_lengkap}! Berhasil masuk sebagai ${currentUser.role}.`, 'success');
+      } else {
+        showToast(`✗ Gagal masuk: ${data.message || 'Username atau password salah'}`, 'warning');
+      }
+    } catch {
+      showToast('✗ Terjadi gangguan jaringan saat login ke server', 'critical');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
+  // Submit Registrasi Akun Baru Publik
+  window.submitAuthRegister = async (e) => {
+    e.preventDefault();
+    const nama_lengkap = document.getElementById('auth-reg-name').value.trim();
+    const username = document.getElementById('auth-reg-username').value.trim();
+    const password = document.getElementById('auth-reg-password').value;
+    const role = document.getElementById('auth-reg-role').value;
+    const btn = document.getElementById('btn-auth-register');
+    if (btn) btn.disabled = true;
+
+    try {
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nama_lengkap, username, password, role })
+      });
+      const data = await res.json();
+
+      if (data.success && data.data) {
+        currentUser = data.data;
+        localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
+        document.getElementById('auth-overlay').classList.add('hidden');
+        applyRolePermissions();
+        showToast(`✓ Registrasi berhasil! Selamat datang di Kafeina ERP, ${currentUser.nama_lengkap}.`, 'success');
+      } else {
+        showToast(`✗ Registrasi gagal: ${data.message}`, 'warning');
+      }
+    } catch {
+      showToast('✗ Terjadi gangguan koneksi saat registrasi akun baru', 'critical');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
   // Quick Login / Switch Role (4 Akun Bawaan)
   window.quickLogin = async (username, password) => {
     showToast(`Mengalihkan ke akun ${username.toUpperCase()}...`, 'info');
@@ -1625,6 +1795,8 @@ document.addEventListener('DOMContentLoaded', () => {
         currentUser = data.data;
         localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
         closeModal('modal-switch-user');
+        const overlay = document.getElementById('auth-overlay');
+        if (overlay) overlay.classList.add('hidden');
         applyRolePermissions();
         showToast(`✓ Berhasil login sebagai ${currentUser.nama_lengkap} (${currentUser.role})!`, 'success');
       } else {
@@ -1641,12 +1813,14 @@ document.addEventListener('DOMContentLoaded', () => {
       currentUser = rolesMap[username] || rolesMap.manager;
       localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
       closeModal('modal-switch-user');
+      const overlay = document.getElementById('auth-overlay');
+      if (overlay) overlay.classList.add('hidden');
       applyRolePermissions();
       showToast(`✓ Berhasil login sebagai ${currentUser.nama_lengkap} (${currentUser.role})!`, 'success');
     }
   };
 
-  // Custom Login
+  // Custom Login dari Modal Switch User
   window.submitCustomLogin = async (e) => {
     e.preventDefault();
     const username = document.getElementById('login-username').value.trim();
@@ -1654,14 +1828,36 @@ document.addEventListener('DOMContentLoaded', () => {
     await quickLogin(username, password);
   };
 
-  // Inisialisasi Hak Akses & Rute Awal
-  applyRolePermissions();
-  loadFinanceData();
+  // Logout dari Sistem ERP
+  window.handleLogout = () => {
+    if (!confirm('Apakah Anda yakin ingin keluar dari sistem Kafeina ERP?')) return;
+    localStorage.removeItem('kafeina_erp_user');
+    currentUser = null;
+    const overlay = document.getElementById('auth-overlay');
+    if (overlay) overlay.classList.remove('hidden');
+    switchAuthTab('login');
+    showToast('🚪 Anda telah berhasil keluar dari sistem.', 'info');
+  };
 
-  const initialHash = window.location.hash.replace('#', '');
-  if (currentUser.allowed_modules.includes(initialHash)) {
-    switchModule(initialHash);
+  // ==============================================================
+  // 9. INISIALISASI APLIKASI SAAT STARTUP
+  // ==============================================================
+  if (!currentUser) {
+    // Tampilkan screen login jika belum login
+    const overlay = document.getElementById('auth-overlay');
+    if (overlay) overlay.classList.remove('hidden');
   } else {
-    switchModule(currentUser.allowed_modules[0] || 'dashboard');
+    // Jalankan perizinan dan muat modul default
+    applyRolePermissions();
+    loadFinanceData();
+
+    const initialHash = window.location.hash.replace('#', '');
+    if (currentUser.allowed_modules && currentUser.allowed_modules.includes(initialHash)) {
+      switchModule(initialHash);
+    } else if (currentUser.allowed_modules && currentUser.allowed_modules.length > 0) {
+      switchModule(currentUser.allowed_modules[0]);
+    } else {
+      switchModule('dashboard');
+    }
   }
 });

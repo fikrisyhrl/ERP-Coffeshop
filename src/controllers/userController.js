@@ -202,8 +202,137 @@ const userController = {
   },
 
   /**
+   * POST /api/auth/register
+   * Pendaftaran akun baru publik
+   */
+  register: async (req, res, next) => {
+    try {
+      const { nama_lengkap, username, password, role } = req.body;
+
+      if (!nama_lengkap || !username || !password) {
+        return res.status(400).json({
+          success: false,
+          message: 'Nama lengkap, username, dan password wajib diisi'
+        });
+      }
+
+      if (password.length < 4) {
+        return res.status(400).json({
+          success: false,
+          message: 'Password minimal 4 karakter'
+        });
+      }
+
+      const assignedRole = (role && ['MANAGER', 'FINANCE', 'HR', 'PROCUREMENT'].includes(role.toUpperCase()))
+        ? role.toUpperCase()
+        : 'FINANCE';
+
+      const existing = await User.findOne({ where: { username } });
+      if (existing) {
+        return res.status(409).json({
+          success: false,
+          message: `Username '${username}' sudah digunakan. Silakan gunakan username lain.`
+        });
+      }
+
+      const newUser = await User.create({
+        nama_lengkap,
+        username,
+        password,
+        role: assignedRole,
+        is_active: true
+      });
+
+      const permissions = ROLE_PERMISSIONS[newUser.role] || {
+        role_name: newUser.role,
+        allowed_modules: ['dashboard'],
+        can_manage_users: false
+      };
+
+      res.status(201).json({
+        success: true,
+        message: `Registrasi berhasil! Selamat datang, ${newUser.nama_lengkap}.`,
+        data: {
+          id_user: newUser.id_user,
+          nama_lengkap: newUser.nama_lengkap,
+          username: newUser.username,
+          role: newUser.role,
+          role_name: permissions.role_name,
+          allowed_modules: permissions.allowed_modules,
+          can_manage_users: permissions.can_manage_users
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/users/:id
+   * Detail user berdasarkan ID
+   */
+  getUserById: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const user = await User.findByPk(id, {
+        attributes: ['id_user', 'nama_lengkap', 'username', 'role', 'is_active', 'created_at']
+      });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+      }
+      res.status(200).json({ success: true, data: user });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * PUT /api/users/:id
+   * Update data user (CRUD - Update)
+   */
+  updateUser: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { nama_lengkap, role, is_active, password } = req.body;
+
+      const user = await User.findByPk(id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User tidak ditemukan' });
+      }
+
+      if (nama_lengkap) user.nama_lengkap = nama_lengkap;
+      if (role && ['MANAGER', 'FINANCE', 'HR', 'PROCUREMENT'].includes(role.toUpperCase())) {
+        user.role = role.toUpperCase();
+      }
+      if (typeof is_active === 'boolean') {
+        user.is_active = is_active;
+      }
+      if (password && password.trim().length >= 4) {
+        user.password = password; // Hook beforeSave akan meng-hash password baru
+      }
+
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: `Data pengguna '${user.nama_lengkap}' berhasil diperbarui!`,
+        data: {
+          id_user: user.id_user,
+          nama_lengkap: user.nama_lengkap,
+          username: user.username,
+          role: user.role,
+          is_active: user.is_active,
+          updated_at: user.updated_at
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
    * DELETE /api/users/:id
-   * Hapus user
+   * Hapus user (CRUD - Delete)
    */
   deleteUser: async (req, res, next) => {
     try {
