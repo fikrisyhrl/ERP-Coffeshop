@@ -348,6 +348,20 @@
                 <!-- Rendered dynamically -->
               </div>
             </div>
+
+            <!-- Col 3: Pengajuan PO Menunggu Persetujuan Finance (Realtime) -->
+            <div class="summary-box">
+              <div class="summary-box-header">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="badge-pulse"></span>
+                  <h5>PO Menunggu Finance</h5>
+                </div>
+                <a href="#finance" onclick="switchModule('finance'); switchFinanceTab('approval');">Lihat Approval &rarr;</a>
+              </div>
+              <div id="dash-recent-po" class="recent-list">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
           </div>
         </section>
 
@@ -382,6 +396,17 @@
                 <span class="trend-sub">Akun #6-1001</span>
               </div>
             </div>
+            <div class="kpi-card card-warning cursor-pointer" onclick="switchFinanceTab('approval')" id="fin-kpi-card-pending" style="border-left: 4px solid var(--status-warning);">
+              <div class="card-icon-wrapper warning-bg">⏳</div>
+              <div class="card-content">
+                <span class="card-label">PO Perlu Approval</span>
+                <h3 class="card-value text-warning" id="fin-kpi-pending-po">0 Pengajuan</h3>
+                <div class="card-trend negative">
+                  <span class="badge-pulse"></span>
+                  <span id="fin-kpi-pending-total">Rp 0 Total PO</span>
+                </div>
+              </div>
+            </div>
             <div class="kpi-card card-pegawai">
               <div class="card-icon-wrapper pegawai-bg">⚖️</div>
               <div class="card-content">
@@ -390,6 +415,20 @@
                 <span class="trend-sub">&Sigma; Debet == &Sigma; Kredit</span>
               </div>
             </div>
+          </div>
+
+          <!-- Realtime Alert Banner for Pending POs in Finance -->
+          <div id="fin-pending-alert-banner" class="realtime-alert-banner" style="display: none;">
+            <div class="alert-banner-left">
+              <span class="alert-pulse-icon">⏳</span>
+              <div>
+                <strong id="fin-alert-banner-title">Pengajuan Pembelian Menunggu Otorisasi Anggaran</strong>
+                <p id="fin-alert-banner-desc">Ada pengajuan bahan baku dari modul Procurement yang memerlukan verifikasi tim Finance.</p>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="switchFinanceTab('approval')">
+              ⚡ Tinjau &amp; Setujui Sekarang &rarr;
+            </button>
           </div>
 
           <!-- Sub Tabs Navigation -->
@@ -406,6 +445,20 @@
 
           <!-- Sub Panel 1: Jurnal Umum -->
           <div class="sub-panel" id="panel-finance-jurnal">
+            <!-- Quick Review Box for Pending POs in Jurnal View -->
+            <div id="fin-quick-po-box" class="quick-po-box" style="display: none; margin-bottom: 20px;">
+              <div class="quick-po-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge-pulse"></span>
+                  <strong style="color: var(--text-heading); font-size: 0.95rem;">Pengajuan Pembelian Terbaru (Menunggu Approval Anda)</strong>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="switchFinanceTab('approval')" style="font-size: 0.78rem;">Buka Semua di Tab Approval &rarr;</button>
+              </div>
+              <div id="fin-quick-po-list" class="quick-po-list">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
             <div class="table-section">
               <div class="table-header">
                 <div class="table-title-group">

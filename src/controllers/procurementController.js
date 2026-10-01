@@ -150,10 +150,21 @@ const procurementController = {
         }
       );
 
+      const createdPoWithDetails = await PurchaseOrder.findByPk(newPo.id_po, {
+        include: [
+          { model: Supplier, as: 'supplier', attributes: ['id_supplier', 'nama_supplier', 'telepon'] },
+          {
+            model: PurchaseOrderItem,
+            as: 'items',
+            include: [{ model: Barang, as: 'barang', attributes: ['id_barang', 'nama_barang', 'satuan'] }]
+          }
+        ]
+      });
+
       return res.status(201).json({
         success: true,
         message: 'Permintaan pembelian (PO) berhasil diajukan dan masuk ke Modul Finance untuk persetujuan (Status: PENDING_APPROVAL)',
-        data: newPo
+        data: createdPoWithDetails || newPo
       });
     } catch (error) {
       next(error);

@@ -438,27 +438,62 @@ document.addEventListener('DOMContentLoaded', () => {
       (item) => parseFloat(item.stok_saat_ini) <= parseFloat(item.batas_safety_stock)
     );
 
-    document.getElementById('kpi-stok-warning-count').textContent = `${warningItems.length} Komoditas`;
-    document.getElementById('badge-stok-alert').textContent = `${warningItems.length} Alert`;
+    const elKpiStok = document.getElementById('kpi-stok-warning-count');
+    const elBadgeStok = document.getElementById('badge-stok-alert');
+    if (elKpiStok) elKpiStok.textContent = `${warningItems.length} Komoditas`;
+    if (elBadgeStok) elBadgeStok.textContent = `${warningItems.length} Alert`;
 
-    if (warningItems.length === 0) {
-      recentAlertsBox.innerHTML = `<div class="recent-item"><span style="color: var(--status-safe);">✓ Semua stok berada pada level aman.</span></div>`;
-    } else {
-      recentAlertsBox.innerHTML = warningItems
-        .slice(0, 3)
-        .map(
-          (item) => `
-        <div class="recent-item">
-          <div class="recent-icon">⚠️</div>
-          <div class="recent-info">
-            <span class="recent-title">${item.nama_barang}</span>
-            <span class="recent-meta">Sisa: ${parseFloat(item.stok_saat_ini).toLocaleString('id-ID')} ${item.satuan} &bull; Batas: ${parseFloat(item.batas_safety_stock).toLocaleString('id-ID')}</span>
+    if (recentAlertsBox) {
+      if (warningItems.length === 0) {
+        recentAlertsBox.innerHTML = `<div class="recent-item"><span style="color: var(--status-safe);">✓ Semua stok berada pada level aman.</span></div>`;
+      } else {
+        recentAlertsBox.innerHTML = warningItems
+          .slice(0, 3)
+          .map(
+            (item) => `
+          <div class="recent-item">
+            <div class="recent-icon">⚠️</div>
+            <div class="recent-info">
+              <span class="recent-title">${item.nama_barang}</span>
+              <span class="recent-meta">Sisa: ${parseFloat(item.stok_saat_ini).toLocaleString('id-ID')} ${item.satuan} &bull; Batas: ${parseFloat(item.batas_safety_stock).toLocaleString('id-ID')}</span>
+            </div>
+            <button class="btn-action-po" onclick="handleCreatePo(${item.id_barang}, '${item.nama_barang}', 2000, '${item.satuan}')">+ PO</button>
           </div>
-          <button class="btn-action-po" onclick="handleCreatePo(${item.id_barang}, '${item.nama_barang}', 2000, '${item.satuan}')">+ PO</button>
-        </div>
-      `
-        )
-        .join('');
+        `
+          )
+          .join('');
+      }
+    }
+
+    // Render Pengajuan PO Menunggu Finance di Dashboard Utama (Realtime)
+    const recentPoBox = document.getElementById('dash-recent-po');
+    if (recentPoBox) {
+      try {
+        const resPo = await fetch('/api/procurement/po');
+        const dataPo = await resPo.json();
+        if (dataPo.success && Array.isArray(dataPo.data)) {
+          purchaseOrders = dataPo.data;
+        }
+      } catch {}
+
+      const pendingPo = purchaseOrders.filter((p) => p.status === 'PENDING_APPROVAL');
+      if (pendingPo.length === 0) {
+        recentPoBox.innerHTML = `<div class="recent-item"><span style="color: var(--status-safe); font-size: 0.85rem;">✓ Semua PO telah disetujui / tidak ada antrean pending.</span></div>`;
+      } else {
+        recentPoBox.innerHTML = pendingPo.slice(0, 3).map((p) => {
+          const itemsText = p.items?.map((it) => `${it.barang?.nama_barang || 'Bahan'} (${parseFloat(it.jumlah_pesan).toLocaleString('id-ID')} ${it.barang?.satuan || 'unit'})`).join(', ') || '-';
+          return `
+            <div class="recent-item">
+              <div class="recent-icon">⏳</div>
+              <div class="recent-info">
+                <span class="recent-title">${p.nomor_po} &bull; ${itemsText}</span>
+                <span class="recent-meta">${p.supplier?.nama_supplier || 'Supplier'} &bull; <strong style="color: var(--green-deep);">Rp ${parseFloat(p.total_estimasi).toLocaleString('id-ID')}</strong></span>
+              </div>
+              <button class="btn-approve" style="font-size: 0.74rem; padding: 4px 8px;" onclick="openFinanceApproveModal(${p.id_po})">✓ Setujui</button>
+            </div>
+          `;
+        }).join('');
+      }
     }
   };
 
@@ -476,42 +511,44 @@ document.addEventListener('DOMContentLoaded', () => {
       console.warn('Finance jurnal offline fallback');
     }
 
-    if (!journalEntries || journalEntries.length === 0) {
-      tableBodyJurnal.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-dim);">Belum ada catatan jurnal umum di database.</td></tr>`;
-    } else {
-      tableBodyJurnal.innerHTML = journalEntries
-        .map((j) => {
-          const debetLines = j.lines?.filter((l) => parseFloat(l.debet) > 0) || [];
-          const kreditLines = j.lines?.filter((l) => parseFloat(l.kredit) > 0) || [];
+    if (tableBodyJurnal) {
+      if (!journalEntries || journalEntries.length === 0) {
+        tableBodyJurnal.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 30px; color: var(--text-dim);">Belum ada catatan jurnal umum di database.</td></tr>`;
+      } else {
+        tableBodyJurnal.innerHTML = journalEntries
+          .map((j) => {
+            const debetLines = j.lines?.filter((l) => parseFloat(l.debet) > 0) || [];
+            const kreditLines = j.lines?.filter((l) => parseFloat(l.kredit) > 0) || [];
 
-          const debetText = debetLines
-            .map((l) => `<div><strong>${l.akun?.kode_akun || ''}</strong> ${l.akun?.nama_akun || ''}</div>`)
-            .join('');
-          const kreditText = kreditLines
-            .map(
-              (l) =>
-                `<div style="padding-left: 14px; color: var(--text-muted);">&bull; <strong>${l.akun?.kode_akun || ''}</strong> ${l.akun?.nama_akun || ''}</div>`
-            )
-            .join('');
+            const debetText = debetLines
+              .map((l) => `<div><strong>${l.akun?.kode_akun || ''}</strong> ${l.akun?.nama_akun || ''}</div>`)
+              .join('');
+            const kreditText = kreditLines
+              .map(
+                (l) =>
+                  `<div style="padding-left: 14px; color: var(--text-muted);">&bull; <strong>${l.akun?.kode_akun || ''}</strong> ${l.akun?.nama_akun || ''}</div>`
+              )
+              .join('');
 
-          return `
-          <tr>
-            <td>
-              <div class="item-cell">
-                <span class="item-name">${j.nomor_jurnal}</span>
-                <span class="item-code">${j.tanggal_jurnal}</span>
-              </div>
-            </td>
-            <td><span class="category-tag">${j.tipe_referensi}</span></td>
-            <td><span style="font-size: 0.88rem; color: var(--text-main);">${j.keterangan}</span></td>
-            <td><strong style="color: var(--green-deep);">Rp ${parseFloat(j.total_debet).toLocaleString('id-ID')}</strong></td>
-            <td><strong style="color: var(--green-forest);">Rp ${parseFloat(j.total_kredit).toLocaleString('id-ID')}</strong></td>
-            <td><span class="badge-status safe">POSTED</span></td>
-            <td style="font-size: 0.8rem; line-height: 1.4;">${debetText}${kreditText}</td>
-          </tr>
-        `;
-        })
-        .join('');
+            return `
+            <tr>
+              <td>
+                <div class="item-cell">
+                  <span class="item-name">${j.nomor_jurnal}</span>
+                  <span class="item-code">${j.tanggal_jurnal}</span>
+                </div>
+              </td>
+              <td><span class="category-tag">${j.tipe_referensi}</span></td>
+              <td><span style="font-size: 0.88rem; color: var(--text-main);">${j.keterangan}</span></td>
+              <td><strong style="color: var(--green-deep);">Rp ${parseFloat(j.total_debet).toLocaleString('id-ID')}</strong></td>
+              <td><strong style="color: var(--green-forest);">Rp ${parseFloat(j.total_kredit).toLocaleString('id-ID')}</strong></td>
+              <td><span class="badge-status safe">POSTED</span></td>
+              <td style="font-size: 0.8rem; line-height: 1.4;">${debetText}${kreditText}</td>
+            </tr>
+          `;
+          })
+          .join('');
+      }
     }
 
     // 2. Fetch CoA
@@ -523,7 +560,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chartOfAccounts = [];
     }
 
-    if (chartOfAccounts && chartOfAccounts.length > 0) {
+    if (tableBodyCoa && chartOfAccounts && chartOfAccounts.length > 0) {
       tableBodyCoa.innerHTML = chartOfAccounts
         .map(
           (c) => `
@@ -558,13 +595,70 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const pendingApprovals = purchaseOrders.filter((p) => p.status === 'PENDING_APPROVAL');
+    const totalPendingNominal = pendingApprovals.reduce(
+      (sum, p) => sum + (parseFloat(p.total_estimasi) || 0),
+      0
+    );
 
+    // Update Tab Badge
     if (badgeApproval) {
       badgeApproval.textContent = pendingApprovals.length;
       if (pendingApprovals.length === 0) {
         badgeApproval.classList.add('badge-zero');
       } else {
         badgeApproval.classList.remove('badge-zero');
+      }
+    }
+
+    // Update KPI Card on Finance Dashboard
+    const elKpiPendingCount = document.getElementById('fin-kpi-pending-po');
+    const elKpiPendingTotal = document.getElementById('fin-kpi-pending-total');
+    if (elKpiPendingCount) elKpiPendingCount.textContent = `${pendingApprovals.length} Pengajuan`;
+    if (elKpiPendingTotal) elKpiPendingTotal.textContent = `Rp ${totalPendingNominal.toLocaleString('id-ID')} Total Estimasi`;
+
+    // Update Realtime Alert Banner on Finance Dashboard
+    const elAlertBanner = document.getElementById('fin-pending-alert-banner');
+    const elAlertDesc = document.getElementById('fin-alert-banner-desc');
+    if (elAlertBanner) {
+      if (pendingApprovals.length > 0) {
+        elAlertBanner.style.display = 'flex';
+        if (elAlertDesc) {
+          elAlertDesc.textContent = `Terdapat ${pendingApprovals.length} pengajuan pembelian dari Procurement senilai total Rp ${totalPendingNominal.toLocaleString('id-ID')} yang menunggu otorisasi Anda.`;
+        }
+      } else {
+        elAlertBanner.style.display = 'none';
+      }
+    }
+
+    // Update Quick Review Box on Jurnal Panel (Sub-panel 1)
+    const elQuickBox = document.getElementById('fin-quick-po-box');
+    const elQuickList = document.getElementById('fin-quick-po-list');
+    if (elQuickBox && elQuickList) {
+      if (pendingApprovals.length > 0) {
+        elQuickBox.style.display = 'block';
+        elQuickList.innerHTML = pendingApprovals.slice(0, 4).map((p) => {
+          const itemsText = p.items?.map((it) => `${it.barang?.nama_barang || 'Bahan'} (${parseFloat(it.jumlah_pesan).toLocaleString('id-ID')} ${it.barang?.satuan || 'unit'})`).join(', ') || '-';
+          return `
+            <div class="quick-po-row">
+              <div class="quick-po-row-info">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <strong style="color: var(--text-heading); font-size: 0.88rem;">${p.nomor_po}</strong>
+                  <span class="badge-status warning" style="font-size: 0.68rem; padding: 2px 6px;">⏳ MENUNGGU APPROVAL</span>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">${p.tanggal_po || ''}</span>
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 3px;">
+                  <strong>${p.supplier?.nama_supplier || 'Supplier Rekanan'}</strong> &bull; ${itemsText} &bull; <strong style="color: var(--green-deep); font-size: 0.88rem;">Rp ${parseFloat(p.total_estimasi).toLocaleString('id-ID')}</strong>
+                </div>
+              </div>
+              <div class="quick-po-row-actions">
+                <button class="btn-approve" onclick="openFinanceApproveModal(${p.id_po})">✓ Setujui</button>
+                <button class="btn-reject" onclick="openFinanceRejectModal(${p.id_po})">✗ Tolak</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        elQuickBox.style.display = 'none';
       }
     }
 
@@ -1141,16 +1235,56 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // Trigger Realtime: Dipanggil seketika saat ada data diinput/diubah/dihapus di seluruh modul
-  window.triggerRealtimeUpdate = async (reason = 'mutation') => {
+  window.triggerRealtimeUpdate = async (reason = 'mutation', payload = null) => {
     flashSyncIndicator('Menyinkronkan...');
 
-    // 1. Segarkan tampilan aktif seketika
-    await refreshActiveDataSilently(reason);
+    // 1. Ingest payload seketika ke memori lokal jika merupakan PO atau perubahan status
+    if (payload && (reason === 'create_po' || reason === 'ajukan_finance')) {
+      const existingIdx = purchaseOrders.findIndex((p) => p.id_po == payload.id_po);
+      if (existingIdx >= 0) {
+        purchaseOrders[existingIdx] = { ...purchaseOrders[existingIdx], ...payload };
+      } else {
+        purchaseOrders.unshift(payload);
+      }
+    } else if (payload && (reason === 'finance_approve' || reason === 'finance_reject')) {
+      const target = purchaseOrders.find((p) => p.id_po == (payload.id_po || payload.poId));
+      if (target) {
+        target.status = payload.status || (reason === 'finance_approve' ? 'CONFIRMED' : 'REJECTED');
+        if (payload.disetujui_oleh) target.disetujui_oleh = payload.disetujui_oleh;
+        if (payload.catatan_finance) target.catatan_finance = payload.catatan_finance;
+      }
+    }
 
-    // 2. Segarkan modul lain yang terpengaruh di latar belakang
+    // 2. Broadcast ke seluruh tab / jendela lain secara instan via BroadcastChannel
+    if (realtimeChannel) {
+      try {
+        realtimeChannel.postMessage({
+          type: 'ERP_REALTIME_SYNC',
+          reason: reason,
+          payload: payload,
+          timestamp: Date.now()
+        });
+      } catch (err) {
+        console.warn('BroadcastChannel post error:', err);
+      }
+    }
+
+    // 3. Ping localStorage sebagai fallback antar-tab / multi-jendela
+    try {
+      localStorage.setItem(
+        'kafeina_erp_realtime_ping',
+        JSON.stringify({ reason, payload, timestamp: Date.now() })
+      );
+    } catch {}
+
+    // 4. Segarkan tampilan aktif seketika di tab saat ini
+    await refreshActiveDataSilently(reason, payload);
+
+    // 5. Segarkan modul lain yang terpengaruh di latar belakang
     if (['create_po', 'ajukan_finance', 'finance_approve', 'finance_reject'].includes(reason)) {
       if (currentModule !== 'procurement') loadProcurementData();
       if (currentModule !== 'finance') loadFinanceData();
+      if (currentModule !== 'dashboard') loadDashboardData();
     }
     if (reason === 'terima_barang') {
       if (currentModule !== 'inventory') loadInventoryData();
@@ -1171,33 +1305,71 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // 3. Broadcast ke seluruh tab / jendela lain secara instan via BroadcastChannel
-    if (realtimeChannel) {
-      try {
-        realtimeChannel.postMessage({
-          type: 'ERP_REALTIME_SYNC',
-          reason: reason,
-          timestamp: Date.now()
-        });
-      } catch (err) {
-        console.warn('BroadcastChannel post error:', err);
+    flashSyncIndicator('Tersinkronisasi ✓');
+  };
+
+  // Handler terpusat untuk pesan sinkronisasi yang masuk dari tab lain
+  const handleIncomingRealtimeSync = async (reason, payload) => {
+    flashSyncIndicator('Data Diperbarui ✓');
+
+    // 1. Ingest PO payload seketika ke memori tab ini
+    if (payload && (reason === 'create_po' || reason === 'ajukan_finance')) {
+      const existingIdx = purchaseOrders.findIndex((p) => p.id_po == payload.id_po);
+      if (existingIdx >= 0) {
+        purchaseOrders[existingIdx] = { ...purchaseOrders[existingIdx], ...payload };
+      } else {
+        purchaseOrders.unshift(payload);
+      }
+
+      // Jika tab ini milik Finance atau Manager, tampilkan notifikasi toast instan
+      if (
+        currentUser &&
+        (currentUser.role === 'FINANCE' ||
+          currentUser.role === 'MANAGER' ||
+          (currentUser.allowed_modules && currentUser.allowed_modules.includes('finance')))
+      ) {
+        showToast(
+          `🔔 Pengajuan PO #${payload.nomor_po || ''} baru saja masuk dari Procurement untuk persetujuan Finance!`,
+          'info'
+        );
+      }
+    } else if (payload && (reason === 'finance_approve' || reason === 'finance_reject')) {
+      const target = purchaseOrders.find((p) => p.id_po == (payload.id_po || payload.poId));
+      if (target) {
+        target.status = payload.status || (reason === 'finance_approve' ? 'CONFIRMED' : 'REJECTED');
+        if (payload.disetujui_oleh) target.disetujui_oleh = payload.disetujui_oleh;
+        if (payload.catatan_finance) target.catatan_finance = payload.catatan_finance;
+      }
+      if (
+        currentUser &&
+        (currentUser.role === 'PROCUREMENT' ||
+          currentUser.role === 'MANAGER' ||
+          (currentUser.allowed_modules && currentUser.allowed_modules.includes('procurement')))
+      ) {
+        const actionLabel = reason === 'finance_approve' ? 'DISETUJUI' : 'DITOLAK';
+        const toastType = reason === 'finance_approve' ? 'success' : 'warning';
+        showToast(`📢 PO #${target?.nomor_po || payload.id_po} telah ${actionLabel} oleh Tim Keuangan.`, toastType);
       }
     }
 
-    // 4. Ping localStorage sebagai fallback antar-tab
-    try {
-      localStorage.setItem('kafeina_erp_realtime_ping', JSON.stringify({ reason, timestamp: Date.now() }));
-    } catch {}
+    // 2. Segarkan data aktif
+    await refreshActiveDataSilently(reason, payload);
 
-    flashSyncIndicator('Tersinkronisasi ✓');
+    // 3. Pastikan modul finance, dashboard, atau procurement ter-render ulang
+    if (currentModule === 'finance') {
+      await loadFinanceData();
+    } else if (currentModule === 'dashboard') {
+      await loadDashboardData();
+    } else if (currentModule === 'procurement') {
+      await loadProcurementData();
+    }
   };
 
   // Listener pesan realtime dari tab lain via BroadcastChannel
   if (realtimeChannel) {
     realtimeChannel.onmessage = async (e) => {
       if (e.data && e.data.type === 'ERP_REALTIME_SYNC') {
-        flashSyncIndicator('Data Diperbarui ✓');
-        await refreshActiveDataSilently(e.data.reason || 'broadcast_sync');
+        await handleIncomingRealtimeSync(e.data.reason || 'broadcast_sync', e.data.payload || null);
       }
     };
   }
@@ -1207,8 +1379,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'kafeina_erp_realtime_ping' && e.newValue) {
       try {
         const ping = JSON.parse(e.newValue);
-        flashSyncIndicator('Data Diperbarui ✓');
-        await refreshActiveDataSilently(ping.reason || 'storage_sync');
+        await handleIncomingRealtimeSync(ping.reason || 'storage_sync', ping.payload || null);
       } catch {}
     }
   });
@@ -1226,9 +1397,34 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==============================================================
   // 7. MODAL HELPERS & ACTIONS
   // ==============================================================
+  const populatePoModalDropdowns = () => {
+    const supSelect = document.getElementById('po-supplier-select');
+    const itemSelect = document.getElementById('po-barang-select');
+
+    if (supSelect && supplierList && supplierList.length > 0) {
+      supSelect.innerHTML = supplierList
+        .map((s) => `<option value="${s.id_supplier}">${s.nama_supplier} (${s.kategori || 'Supplier'})</option>`)
+        .join('');
+    }
+
+    if (itemSelect && inventoryItems && inventoryItems.length > 0) {
+      itemSelect.innerHTML = inventoryItems
+        .map(
+          (i) =>
+            `<option value="${i.id_barang}">${i.nama_barang} (${i.satuan || 'unit'}) - Stok: ${parseFloat(
+              i.stok_saat_ini || 0
+            ).toLocaleString('id-ID')}</option>`
+        )
+        .join('');
+    }
+  };
+
   window.openModal = (modalId) => {
     const m = document.getElementById(modalId);
     if (m) m.classList.add('active');
+    if (modalId === 'modal-po') {
+      populatePoModalDropdowns();
+    }
   };
 
   window.closeModal = (modalId) => {
@@ -1239,6 +1435,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Buat Pengajuan PO Cepat dari Safety Stock
   window.handleCreatePo = async (idBarang, namaBarang, jumlahPesan, satuan) => {
     showToast(`Mengajukan Pembelian ke Finance untuk ${namaBarang} (+${jumlahPesan.toLocaleString('id-ID')} ${satuan})...`, 'info');
+    let createdPo = null;
+
     try {
       const response = await fetch('/api/procurement/po', {
         method: 'POST',
@@ -1250,15 +1448,16 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       const data = await response.json();
-      if (data.success) {
-        showToast(`✓ Pengajuan PO #${data.data.nomor_po} berhasil masuk ke Modul Finance untuk persetujuan!`, 'success');
+      if (data.success && data.data) {
+        createdPo = data.data;
+        showToast(`✓ Pengajuan PO #${createdPo.nomor_po} berhasil masuk ke Modul Finance untuk persetujuan!`, 'success');
       } else {
         throw new Error(data.message || 'Gagal membuat PO');
       }
     } catch {
       // Offline fallback
       const newId = Date.now();
-      const newPo = {
+      createdPo = {
         id_po: newId,
         nomor_po: `PO-AUTO-${Date.now().toString().slice(-6)}`,
         supplier_id: 1,
@@ -1270,11 +1469,19 @@ document.addEventListener('DOMContentLoaded', () => {
         supplier: { id_supplier: 1, nama_supplier: 'CV Nusantara Coffee Roastery', telepon: '0812-3456-7890' },
         items: [{ id_barang: idBarang, jumlah_pesan: jumlahPesan, harga_satuan_estimasi: 300, barang: { id_barang: idBarang, nama_barang: namaBarang, satuan } }]
       };
-      purchaseOrders.unshift(newPo);
       showToast(`✓ Permintaan pembelian untuk ${namaBarang} masuk ke Modul Finance (Menunggu Persetujuan)!`, 'success');
     }
 
-    await triggerRealtimeUpdate('create_po');
+    if (createdPo) {
+      const existingIdx = purchaseOrders.findIndex((p) => p.id_po == createdPo.id_po);
+      if (existingIdx >= 0) {
+        purchaseOrders[existingIdx] = createdPo;
+      } else {
+        purchaseOrders.unshift(createdPo);
+      }
+    }
+
+    await triggerRealtimeUpdate('create_po', createdPo);
   };
 
   // Submit Modal Pengajuan PO Baru ke Finance
@@ -1289,6 +1496,8 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal('modal-po');
     showToast('Mengirim pengajuan pembelian ke Modul Finance...', 'info');
 
+    let createdPo = null;
+
     try {
       const res = await fetch('/api/procurement/po', {
         method: 'POST',
@@ -1300,8 +1509,9 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       const data = await res.json();
-      if (data.success) {
-        showToast(`✓ Pengajuan PO #${data.data.nomor_po} berhasil masuk ke Modul Finance untuk ditinjau!`, 'success');
+      if (data.success && data.data) {
+        createdPo = data.data;
+        showToast(`✓ Pengajuan PO #${createdPo.nomor_po} berhasil masuk ke Modul Finance untuk ditinjau!`, 'success');
       } else {
         throw new Error(data.message || 'Gagal');
       }
@@ -1310,7 +1520,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const sup = supplierList.find((s) => s.id_supplier == supplier_id) || { nama_supplier: 'Supplier Rekanan' };
       const itm = inventoryItems.find((i) => i.id_barang == id_barang) || { nama_barang: 'Bahan Baku', satuan: 'unit' };
       const newId = Date.now();
-      const newPo = {
+      createdPo = {
         id_po: newId,
         nomor_po: `PO-MANUAL-${Date.now().toString().slice(-6)}`,
         supplier_id: parseInt(supplier_id),
@@ -1322,33 +1532,45 @@ document.addEventListener('DOMContentLoaded', () => {
         supplier: sup,
         items: [{ id_barang: parseInt(id_barang), jumlah_pesan, harga_satuan_estimasi, barang: itm }]
       };
-      purchaseOrders.unshift(newPo);
-      showToast(`✓ Pengajuan PO #${newPo.nomor_po} berhasil masuk ke Modul Finance untuk disetujui!`, 'success');
+      showToast(`✓ Pengajuan PO #${createdPo.nomor_po} berhasil masuk ke Modul Finance untuk disetujui!`, 'success');
     }
 
-    await triggerRealtimeUpdate('create_po');
+    if (createdPo) {
+      const existingIdx = purchaseOrders.findIndex((p) => p.id_po == createdPo.id_po);
+      if (existingIdx >= 0) {
+        purchaseOrders[existingIdx] = createdPo;
+      } else {
+        purchaseOrders.unshift(createdPo);
+      }
+    }
+
+    await triggerRealtimeUpdate('create_po', createdPo);
   };
 
   // Ajukan Draf PO ke Finance
   window.handleAjukanKeFinance = async (poId) => {
     showToast(`Mengajukan PO #${poId} ke Modul Finance...`, 'info');
+    let targetPo = purchaseOrders.find((p) => p.id_po == poId);
+
     try {
       const res = await fetch(`/api/procurement/po/${poId}/ajukan-finance`, { method: 'PATCH' });
       const data = await res.json();
       if (data.success) {
-        showToast(`✓ PO #${poId} berhasil diajukan ke Modul Finance!`, 'success');
+        if (targetPo) targetPo.status = 'PENDING_APPROVAL';
+        showToast(`✓ PO #${data.data?.nomor_po || poId} berhasil diajukan ke Modul Finance!`, 'success');
+        if (data.data) targetPo = data.data;
       }
     } catch {
-      const po = purchaseOrders.find((p) => p.id_po === poId);
-      if (po) po.status = 'PENDING_APPROVAL';
+      if (targetPo) targetPo.status = 'PENDING_APPROVAL';
       showToast(`✓ PO #${poId} berhasil diajukan ke Modul Finance!`, 'success');
     }
-    await triggerRealtimeUpdate('ajukan_finance');
+
+    await triggerRealtimeUpdate('ajukan_finance', targetPo || { id_po: poId, status: 'PENDING_APPROVAL' });
   };
 
   // Buka Modal Persetujuan Finance
   window.openFinanceApproveModal = (poId) => {
-    const po = purchaseOrders.find((p) => p.id_po === poId);
+    const po = purchaseOrders.find((p) => p.id_po == poId);
     if (!po) return;
     document.getElementById('fa-po-id').value = poId;
     const summaryBox = document.getElementById('approve-po-summary');
@@ -1382,6 +1604,8 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal('modal-finance-approve');
     showToast(`Memproses persetujuan Finance untuk PO #${poId}...`, 'info');
 
+    let approvedPo = null;
+
     try {
       const res = await fetch(`/api/finance/pengajuan-po/${poId}/setujui`, {
         method: 'PATCH',
@@ -1390,26 +1614,38 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.success) {
+        approvedPo = data.data;
         showToast(`✓ PO #${data.data?.nomor_po || poId} DISETUJUI Finance! Pembelian siap dilaksanakan.`, 'success');
       } else {
         throw new Error(data.message);
       }
     } catch {
-      const po = purchaseOrders.find((p) => p.id_po === poId);
+      const po = purchaseOrders.find((p) => p.id_po == poId);
       if (po) {
         po.status = 'CONFIRMED';
         po.disetujui_oleh = disetujui_oleh;
         po.catatan_finance = catatan_finance || 'Disetujui oleh Finance. Pembelian siap dilaksanakan.';
+        approvedPo = po;
       }
       showToast(`✓ PO #${po?.nomor_po || poId} DISETUJUI Finance! Pembelian aktif dan siap dilaksanakan.`, 'success');
     }
 
-    await triggerRealtimeUpdate('finance_approve');
+    const target = purchaseOrders.find((p) => p.id_po == poId);
+    if (target) {
+      target.status = 'CONFIRMED';
+      target.disetujui_oleh = disetujui_oleh;
+      target.catatan_finance = catatan_finance;
+    }
+
+    await triggerRealtimeUpdate(
+      'finance_approve',
+      approvedPo || { id_po: poId, status: 'CONFIRMED', disetujui_oleh, catatan_finance }
+    );
   };
 
   // Buka Modal Penolakan Finance
   window.openFinanceRejectModal = (poId) => {
-    const po = purchaseOrders.find((p) => p.id_po === poId);
+    const po = purchaseOrders.find((p) => p.id_po == poId);
     if (!po) return;
     document.getElementById('fr-po-id').value = poId;
     const summaryBox = document.getElementById('reject-po-summary');
@@ -1442,6 +1678,8 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal('modal-finance-reject');
     showToast(`Memproses penolakan pengajuan PO #${poId}...`, 'info');
 
+    let rejectedPo = null;
+
     try {
       const res = await fetch(`/api/finance/pengajuan-po/${poId}/tolak`, {
         method: 'PATCH',
@@ -1450,21 +1688,33 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.success) {
+        rejectedPo = data.data;
         showToast(`✗ Pengajuan PO #${data.data?.nomor_po || poId} DITOLAK. Pengajuan dibatalkan.`, 'warning');
       } else {
         throw new Error(data.message);
       }
     } catch {
-      const po = purchaseOrders.find((p) => p.id_po === poId);
+      const po = purchaseOrders.find((p) => p.id_po == poId);
       if (po) {
         po.status = 'REJECTED';
         po.disetujui_oleh = ditolak_oleh;
         po.catatan_finance = alasan_penolakan;
+        rejectedPo = po;
       }
       showToast(`✗ Pengajuan PO #${po?.nomor_po || poId} DITOLAK oleh Finance (Pengajuan Dibatalkan).`, 'warning');
     }
 
-    await triggerRealtimeUpdate('finance_reject');
+    const target = purchaseOrders.find((p) => p.id_po == poId);
+    if (target) {
+      target.status = 'REJECTED';
+      target.disetujui_oleh = ditolak_oleh;
+      target.catatan_finance = alasan_penolakan;
+    }
+
+    await triggerRealtimeUpdate(
+      'finance_reject',
+      rejectedPo || { id_po: poId, status: 'REJECTED', ditolak_oleh, catatan_finance: alasan_penolakan }
+    );
   };
 
   // Konfirmasi PO (kompatibilitas mundur)

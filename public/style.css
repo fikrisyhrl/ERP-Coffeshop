@@ -1809,4 +1809,113 @@ body {
   color: var(--text-muted);
 }
 
+/* ==========================================================================
+   11. REALTIME FINANCE PO ALERT & QUICK REVIEW WIDGETS
+   ========================================================================== */
+.realtime-alert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 1px solid #fde68a;
+  border-left: 5px solid #d97706;
+  padding: 14px 20px;
+  border-radius: 10px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08);
+  animation: fadeInDown 0.3s ease;
+}
+
+.realtime-alert-banner .alert-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.realtime-alert-banner .alert-pulse-icon {
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(217, 119, 6, 0.15);
+  animation: pulseIcon 1.6s infinite ease-in-out;
+}
+
+@keyframes pulseIcon {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.realtime-alert-banner strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #92400e;
+  margin-bottom: 2px;
+}
+
+.realtime-alert-banner p {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #b45309;
+}
+
+/* Quick PO Review Box on Finance Jurnal Panel */
+.quick-po-box {
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(249, 115, 22, 0.05);
+}
+
+.quick-po-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #fff7ed;
+  border-bottom: 1px solid #ffedd5;
+}
+
+.quick-po-list {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.quick-po-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.quick-po-row:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.quick-po-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.quick-po-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
 
