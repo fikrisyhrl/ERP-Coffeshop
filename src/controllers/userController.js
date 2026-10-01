@@ -19,7 +19,7 @@ const ROLE_PERMISSIONS = {
   },
   PROCUREMENT: {
     role_name: 'Procurement & Purchasing Specialist',
-    allowed_modules: ['procurement'],
+    allowed_modules: ['procurement', 'inventory'],
     can_manage_users: false
   }
 };

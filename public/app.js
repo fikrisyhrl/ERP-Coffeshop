@@ -1537,7 +1537,7 @@ document.addEventListener('DOMContentLoaded', () => {
       MANAGER: '<span style="font-weight: 600; color: var(--green-deep); font-size: 0.82rem;">Semua Modul (Full Access)</span>',
       FINANCE: '<span style="color: var(--text-body); font-size: 0.82rem;">Finance &amp; CoA</span>',
       HR: '<span style="color: var(--text-body); font-size: 0.82rem;">HCM &amp; Payroll</span>',
-      PROCUREMENT: '<span style="color: var(--text-body); font-size: 0.82rem;">Procurement &amp; PO</span>'
+      PROCUREMENT: '<span style="color: var(--text-body); font-size: 0.82rem;">Procurement &amp; Inventory</span>'
     };
 
     const avatarBgClasses = {
@@ -1763,7 +1763,7 @@ document.addEventListener('DOMContentLoaded', () => {
       MANAGER: '👑 <strong>MANAGER:</strong> Akses penuh ke seluruh modul sistem ERP (Dashboard, Inventory, Finance, HR, Procurement, & Manajemen User).',
       FINANCE: '💰 <strong>FINANCE:</strong> Hanya dapat membuka modul <em>Finance & CoA</em> (Buku Jurnal, Bagan Akun, Persetujuan Anggaran).',
       HR: '👥 <strong>HR:</strong> Hanya dapat membuka modul <em>HCM & Payroll</em> (Data Karyawan, Rekap Absensi, Penggajian).',
-      PROCUREMENT: '📦 <strong>PROCUREMENT:</strong> Hanya dapat membuka modul <em>Procurement & PO</em> (Pengajuan PO, Daftar Supplier, Penerimaan Barang).'
+      PROCUREMENT: '📦 <strong>PROCUREMENT:</strong> Dapat membuka modul <em>Procurement & PO</em> serta <em>Inventory & Stok</em> (Pengajuan PO, Daftar Supplier, Penerimaan Barang, Kontrol Stok).'
     };
 
     box.innerHTML = descriptions[role] || '';
@@ -1881,7 +1881,7 @@ document.addEventListener('DOMContentLoaded', () => {
         role_name: role === 'MANAGER' ? 'Store Manager & Owner' : `Staff ${role}`,
         allowed_modules: role === 'MANAGER'
           ? ['dashboard', 'finance', 'hcm', 'procurement', 'inventory', 'users']
-          : role === 'FINANCE' ? ['finance'] : role === 'HR' ? ['hcm'] : ['procurement'],
+          : role === 'FINANCE' ? ['finance'] : role === 'HR' ? ['hcm'] : ['procurement', 'inventory'],
         can_manage_users: (role === 'MANAGER'),
         is_active: true
       };
@@ -1924,6 +1924,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const overlay = document.getElementById('auth-overlay');
         if (overlay) overlay.classList.add('hidden');
         applyRolePermissions();
+        await loadUsersData();
         showToast(`✓ Berhasil login sebagai ${currentUser.nama_lengkap} (${currentUser.role})!`, 'success');
       } else {
         showToast(`✗ Gagal login: ${data.message}`, 'warning');
@@ -1934,7 +1935,7 @@ document.addEventListener('DOMContentLoaded', () => {
         manager: { id_user: 1, nama_lengkap: 'Fikri (Store Manager & Owner)', username: 'manager', role: 'MANAGER', role_name: 'Store Manager & Owner', allowed_modules: ['dashboard', 'finance', 'hcm', 'procurement', 'inventory', 'users'], can_manage_users: true },
         finance: { id_user: 2, nama_lengkap: 'Staff Finance & Accounting', username: 'finance', role: 'FINANCE', role_name: 'Finance Specialist', allowed_modules: ['finance'], can_manage_users: false },
         hr: { id_user: 3, nama_lengkap: 'Staff HR & People Operations', username: 'hr', role: 'HR', role_name: 'HR Specialist', allowed_modules: ['hcm'], can_manage_users: false },
-        procurement: { id_user: 4, nama_lengkap: 'Staff Procurement & Purchasing', username: 'procurement', role: 'PROCUREMENT', role_name: 'Procurement Specialist', allowed_modules: ['procurement'], can_manage_users: false }
+        procurement: { id_user: 4, nama_lengkap: 'Staff Procurement & Purchasing', username: 'procurement', role: 'PROCUREMENT', role_name: 'Procurement Specialist', allowed_modules: ['procurement', 'inventory'], can_manage_users: false }
       };
       currentUser = rolesMap[username] || rolesMap.manager;
       localStorage.setItem('kafeina_erp_user', JSON.stringify(currentUser));
