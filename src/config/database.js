@@ -1,5 +1,7 @@
 const { Sequelize } = require('sequelize');
 const dotenv = require('dotenv');
+const pg = require('pg');
+const mysql2 = require('mysql2');
 
 dotenv.config();
 
@@ -23,6 +25,7 @@ if (process.env.DATABASE_URL) {
   // Mode Supabase / Cloud Postgres menggunakan Connection String URL (Port 6543 Transaction Pooler)
   sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: 'postgres',
+    dialectModule: pg,
     dialectOptions: {
       ssl: {
         require: true,
@@ -43,6 +46,7 @@ if (process.env.DATABASE_URL) {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT, 10) || 5432,
       dialect: 'postgres',
+      dialectModule: pg,
       dialectOptions: {
         ssl: {
           require: true,
@@ -64,6 +68,7 @@ if (process.env.DATABASE_URL) {
       host: process.env.DB_HOST || 'localhost',
       port: parseInt(process.env.DB_PORT, 10) || 3306,
       dialect: 'mysql',
+      dialectModule: mysql2,
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       pool: {
         max: 10,

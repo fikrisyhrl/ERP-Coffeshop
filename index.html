@@ -1,0 +1,1943 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kafeina ERP - Coffee Shop Management OS</title>
+  <!-- Google Fonts: Plus Jakarta Sans & Outfit -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-layout">
+    <!-- ============================================================== -->
+    <!-- 1. SIDEBAR NAVIGATION                                          -->
+    <!-- ============================================================== -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="brand-logo">
+          <div class="logo-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+              <line x1="6" y1="1" x2="6" y2="4"></line>
+              <line x1="10" y1="1" x2="10" y2="4"></line>
+              <line x1="14" y1="1" x2="14" y2="4"></line>
+            </svg>
+          </div>
+          <div class="brand-info">
+            <h1 class="brand-name">KAFEINA<span>ERP</span></h1>
+            <span class="brand-tag">Coffee & Roastery OS</span>
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">MODUL UTAMA</div>
+        <ul class="nav-list">
+          <!-- 1. Dashboard Utama -->
+          <li class="nav-item">
+            <a href="#dashboard" class="nav-link active" id="nav-dashboard" data-module="dashboard">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              <span>Dashboard</span>
+            </a>
+          </li>
+
+          <!-- 2. Finance & Accounting -->
+          <li class="nav-item">
+            <a href="#finance" class="nav-link" id="nav-finance" data-module="finance">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+              </svg>
+              <span>Finance & CoA</span>
+            </a>
+          </li>
+
+          <!-- 3. HCM & Payroll -->
+          <li class="nav-item">
+            <a href="#hcm" class="nav-link" id="nav-hcm" data-module="hcm">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span>HCM & Payroll</span>
+            </a>
+          </li>
+
+          <!-- 4. Procurement & PO -->
+          <li class="nav-item">
+            <a href="#procurement" class="nav-link" id="nav-procurement" data-module="procurement">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+              </svg>
+              <span>Procurement & PO</span>
+            </a>
+          </li>
+
+          <!-- 5. Inventory & Stok -->
+          <li class="nav-item">
+            <a href="#inventory" class="nav-link" id="nav-inventory" data-module="inventory">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+              <span>Inventory & Stok</span>
+              <span class="nav-badge" id="badge-stok-alert">3 Alert</span>
+            </a>
+          </li>
+
+          <!-- 6. Manajemen Pengguna & Hak Akses (Manager Only) -->
+          <li class="nav-item" id="nav-item-users">
+            <a href="#users" class="nav-link" id="nav-users" data-module="users">
+              <svg class="nav-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <span>Manajemen User</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="store-badge">
+          <span class="status-indicator online"></span>
+          <div class="store-details">
+            <span class="store-name">Outlet Senopati</span>
+            <span class="store-status">Sistem Online &bull; Realtime Live</span>
+          </div>
+        </div>
+        <div class="user-profile" id="btn-user-profile" onclick="openModal('modal-switch-user')" title="Klik untuk ganti pengguna / role" style="cursor: pointer;">
+          <div class="avatar" id="current-user-avatar">F</div>
+          <div class="user-info">
+            <span class="user-name" id="current-user-name">Fikri</span>
+            <span class="user-role" id="current-user-role">Store Manager & Owner</span>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: auto; opacity: 0.6;">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+        <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button type="button" onclick="openModal('modal-switch-user')" class="btn btn-secondary btn-sm" style="font-size: 0.76rem; padding: 6px 8px; justify-content: center; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #e2e8f0;" title="Ganti Pengguna / Role">
+            🔄 Role
+          </button>
+          <button type="button" onclick="handleLogout()" class="btn btn-secondary btn-sm" style="font-size: 0.76rem; padding: 6px 8px; justify-content: center; background: rgba(220,38,38,0.2); border-color: rgba(220,38,38,0.4); color: #fca5a5;" title="Keluar / Logout">
+            🚪 Keluar
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ============================================================== -->
+    <!-- 2. MAIN CONTENT AREA                                           -->
+    <!-- ============================================================== -->
+    <main class="main-content">
+      <!-- Topbar Header -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="breadcrumbs">
+            <span>ERP Coffee Shop</span>
+            <span class="separator">/</span>
+            <span class="current" id="breadcrumb-current">Dashboard Utama</span>
+          </div>
+          <h2 class="page-title" id="page-title">Executive Overview</h2>
+        </div>
+
+        <div class="topbar-right">
+          <!-- Realtime Live Sync Indicator -->
+          <div class="live-sync-indicator" id="live-sync-indicator" onclick="triggerRealtimeUpdate('manual_click')" title="Sistem Realtime Aktif: Semua input data tersinkronisasi seketika. Klik untuk refresh paksa.">
+            <span class="live-sync-dot"></span>
+            <span class="live-sync-text" id="live-sync-text">Realtime Live</span>
+          </div>
+
+          <div class="live-clock" id="live-clock">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="current-time">Memuat waktu...</span>
+          </div>
+
+          <button class="btn btn-secondary btn-icon" id="btn-refresh" title="Segarkan Data Modul">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            <span>Refresh</span>
+          </button>
+
+          <button class="btn btn-secondary" onclick="openModal('modal-switch-user')" id="btn-topbar-switch" title="Ganti Pengguna / Role" style="display: flex; align-items: center; gap: 8px;">
+            <span id="badge-topbar-role" class="badge-status safe" style="font-size: 0.72rem; padding: 2px 8px; font-weight: 700;">MANAGER</span>
+            <span style="font-size: 0.85rem;">Ganti Akun</span>
+          </button>
+
+          <button class="btn btn-secondary btn-icon" onclick="handleLogout()" title="Keluar dari Sistem (Logout)" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span>Keluar</span>
+          </button>
+
+          <button class="btn btn-primary" id="btn-topbar-action">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span id="topbar-action-text">+ Buat Draf PO</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Dashboard Body Content -->
+      <div class="dashboard-body">
+
+        <!-- ============================================================== -->
+        <!-- VIEW 1: DASHBOARD UTAMA (EXECUTIVE OVERVIEW)                   -->
+        <!-- ============================================================== -->
+        <section class="module-view" id="view-dashboard" data-module="dashboard">
+          <!-- 4 KPI Card Widgets Utama -->
+          <div class="kpi-grid">
+            <!-- Card 1: Total Kas -->
+            <div class="kpi-card card-kas cursor-pointer" onclick="switchModule('finance')">
+              <div class="card-icon-wrapper kas-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <line x1="2" y1="10" x2="22" y2="10"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Total Kas & Bank</span>
+                <h3 class="card-value" id="kpi-kas-value">Rp 84.750.000</h3>
+                <div class="card-trend positive">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="18 15 12 9 6 15"></polyline>
+                  </svg>
+                  <span>Kasir + Bank BCA</span>
+                  <span class="trend-sub">&bull; Buka Finance &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Total Aset -->
+            <div class="kpi-card card-aset cursor-pointer" onclick="switchModule('finance')">
+              <div class="card-icon-wrapper aset-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                  <path d="M2 17l10 5 10-5"></path>
+                  <path d="M2 12l10 5 10-5"></path>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Total Aset & Persediaan</span>
+                <h3 class="card-value" id="kpi-aset-value">Rp 142.300.000</h3>
+                <div class="card-trend neutral">
+                  <span>Valuasi Stok HPP + Mesin</span>
+                  <span class="trend-sub">&bull; Buka Aset &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Stok Menipis -->
+            <div class="kpi-card card-warning cursor-pointer" onclick="switchModule('inventory')">
+              <div class="card-icon-wrapper warning-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Stok Bahan Menipis</span>
+                <h3 class="card-value text-warning" id="kpi-stok-warning-count">3 Komoditas</h3>
+                <div class="card-trend negative">
+                  <span class="badge-pulse"></span>
+                  <span>Di bawah batas safety</span>
+                  <span class="trend-sub">&bull; Buka Stok &rarr;</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Jumlah Pegawai -->
+            <div class="kpi-card card-pegawai cursor-pointer" onclick="switchModule('hcm')">
+              <div class="card-icon-wrapper pegawai-bg">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+              </div>
+              <div class="card-content">
+                <span class="card-label">Jumlah Pegawai</span>
+                <h3 class="card-value" id="kpi-pegawai-value">12 Orang</h3>
+                <div class="card-trend info">
+                  <span>Barista &bull; Kitchen &bull; Floor</span>
+                  <span class="trend-sub">&bull; Buka HCM &rarr;</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Navigation Banner -->
+          <div class="quick-nav-banner">
+            <div class="banner-text">
+              <h4>🚀 Navigasi Cepat Modul ERP</h4>
+              <p>Pilih modul spesifik di sidebar atau gunakan tombol di bawah untuk melihat rincian operasional coffee shop Anda.</p>
+            </div>
+            <div class="banner-buttons">
+              <button class="btn btn-secondary btn-sm" onclick="switchModule('finance')">📊 Laporan Keuangan</button>
+              <button class="btn btn-secondary btn-sm" onclick="switchModule('hcm')">👥 HCM & Slip Gaji</button>
+              <button class="btn btn-secondary btn-sm" onclick="switchModule('procurement')">📦 Pengadaan (PO)</button>
+              <button class="btn btn-primary btn-sm" onclick="switchModule('inventory')">🔍 Kontrol Stok</button>
+            </div>
+          </div>
+
+          <!-- Mini Summary Grid -->
+          <div class="summary-columns-grid">
+            <!-- Col 1: Status Keuangan Terakhir -->
+            <div class="summary-box">
+              <div class="summary-box-header">
+                <h5>Jurnal Umum Terkini</h5>
+                <a href="#finance" onclick="switchModule('finance')">Lihat Semua</a>
+              </div>
+              <div id="dash-recent-jurnal" class="recent-list">
+                <div class="recent-item">
+                  <div class="recent-icon">💸</div>
+                  <div class="recent-info">
+                    <span class="recent-title">Pembayaran Gaji Dimas Pratama</span>
+                    <span class="recent-meta">Rp 5.030.000 &bull; Beban Gaji &rarr; BCA</span>
+                  </div>
+                  <span class="badge-status safe">POSTED</span>
+                </div>
+                <div class="recent-item">
+                  <div class="recent-icon">📦</div>
+                  <div class="recent-info">
+                    <span class="recent-title">Beli Tunai Arabica House Blend</span>
+                    <span class="recent-meta">Rp 750.000 &bull; Kas Toko</span>
+                  </div>
+                  <span class="badge-status safe">POSTED</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Col 2: Status Pengadaan & Alert Stok -->
+            <div class="summary-box">
+              <div class="summary-box-header">
+                <h5>Peringatan Stok Mendesak</h5>
+                <a href="#inventory" onclick="switchModule('inventory')">Buka Inventory</a>
+              </div>
+              <div id="dash-recent-alerts" class="recent-list">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+
+            <!-- Col 3: Pengajuan PO Menunggu Persetujuan Finance (Realtime) -->
+            <div class="summary-box">
+              <div class="summary-box-header">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                  <span class="badge-pulse"></span>
+                  <h5>PO Menunggu Finance</h5>
+                </div>
+                <a href="#finance" onclick="switchModule('finance'); switchFinanceTab('approval');">Lihat Approval &rarr;</a>
+              </div>
+              <div id="dash-recent-po" class="recent-list">
+                <!-- Rendered dynamically -->
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 2: FINANCE & ACCOUNTING                                   -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-finance" data-module="finance">
+          <!-- Finance KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">💵</div>
+              <div class="card-content">
+                <span class="card-label">Kasir / Kas Toko</span>
+                <h3 class="card-value" id="fin-kas-toko">Rp 15.000.000</h3>
+                <span class="trend-sub">Akun #1-1001 (Tunai)</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">🏦</div>
+              <div class="card-content">
+                <span class="card-label">Bank BCA Operasional</span>
+                <h3 class="card-value" id="fin-bank-bca">Rp 85.000.000</h3>
+                <span class="trend-sub">Akun #1-1002 (Rekening)</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas" style="border-left: 4px solid var(--green-deep); background: linear-gradient(135deg, rgba(238, 245, 240, 0.95), #ffffff);">
+              <div class="card-icon-wrapper kas-bg" style="background: var(--green-deep); color: #ffffff;">💰</div>
+              <div class="card-content">
+                <span class="card-label">Total Uang Tersedia</span>
+                <h3 class="card-value" id="fin-total-uang" style="color: var(--green-deep);">Rp 100.000.000</h3>
+                <button class="btn btn-primary btn-sm" onclick="openModal('modal-finance-cash')" style="margin-top: 5px; padding: 3px 8px; font-size: 0.74rem;">
+                  + Input / Tambah Dana
+                </button>
+              </div>
+            </div>
+            <div class="kpi-card card-warning cursor-pointer" onclick="switchFinanceTab('invoice')" style="border-left: 4px solid #ea580c;">
+              <div class="card-icon-wrapper warning-bg" style="background: #ffedd5; color: #c2410c;">📄</div>
+              <div class="card-content">
+                <span class="card-label">Tagihan Invoice PO (Unpaid)</span>
+                <h3 class="card-value text-warning" id="fin-kpi-unpaid-inv">0 Tagihan</h3>
+                <div class="card-trend negative">
+                  <span id="fin-kpi-unpaid-nominal">Rp 0 Perlu Dibayar</span>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card card-warning cursor-pointer" onclick="switchFinanceTab('approval')" id="fin-kpi-card-pending" style="border-left: 4px solid var(--status-warning);">
+              <div class="card-icon-wrapper warning-bg">⏳</div>
+              <div class="card-content">
+                <span class="card-label">PO Perlu Approval</span>
+                <h3 class="card-value text-warning" id="fin-kpi-pending-po">0 Pengajuan</h3>
+                <div class="card-trend negative">
+                  <span class="badge-pulse"></span>
+                  <span id="fin-kpi-pending-total">Rp 0 Total PO</span>
+                </div>
+              </div>
+            </div>
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">📑</div>
+              <div class="card-content">
+                <span class="card-label">Beban Gaji Bulan Ini</span>
+                <h3 class="card-value" id="fin-beban-gaji">Rp 5.030.000</h3>
+                <span class="trend-sub">Akun #6-1001</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Realtime Alert Banner for Pending POs in Finance -->
+          <div id="fin-pending-alert-banner" class="realtime-alert-banner" style="display: none;">
+            <div class="alert-banner-left">
+              <span class="alert-pulse-icon">⏳</span>
+              <div>
+                <strong id="fin-alert-banner-title">Pengajuan Pembelian Menunggu Otorisasi Anggaran</strong>
+                <p id="fin-alert-banner-desc">Ada pengajuan bahan baku dari modul Procurement yang memerlukan verifikasi tim Finance.</p>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="switchFinanceTab('approval')">
+              ⚡ Tinjau &amp; Setujui Sekarang &rarr;
+            </button>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchFinanceTab('jurnal')">📖 Buku Jurnal Umum (General Ledger)</button>
+              <button class="sub-tab" onclick="switchFinanceTab('coa')">🗂️ Chart of Accounts (CoA)</button>
+              <button class="sub-tab" onclick="switchFinanceTab('approval')">💳 Persetujuan PO <span class="tab-badge" id="fin-pending-badge">0</span></button>
+              <button class="sub-tab" onclick="switchFinanceTab('invoice')">📄 Invoice &amp; Tagihan PO <span class="tab-badge" id="fin-invoice-badge">0</span></button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-finance-cash')">💰 + Input Saldo / Pemasukan Kas</button>
+              <button class="btn btn-secondary btn-sm" onclick="openModal('modal-jurnal')">+ Jurnal Manual</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Jurnal Umum -->
+          <div class="sub-panel" id="panel-finance-jurnal">
+            <!-- Quick Review Box for Pending POs in Jurnal View -->
+            <div id="fin-quick-po-box" class="quick-po-box" style="display: none; margin-bottom: 20px;">
+              <div class="quick-po-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span class="badge-pulse"></span>
+                  <strong style="color: var(--text-heading); font-size: 0.95rem;">Pengajuan Pembelian Terbaru (Menunggu Approval Anda)</strong>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="switchFinanceTab('approval')" style="font-size: 0.78rem;">Buka Semua di Tab Approval &rarr;</button>
+              </div>
+              <div id="fin-quick-po-list" class="quick-po-list">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">GENERAL LEDGER</div>
+                  <h3 class="table-title">Riwayat Jurnal Umum (Double-Entry Bookkeeping)</h3>
+                  <p class="table-subtitle">Pencatatan akuntansi otomatis dari transaksi kas, payroll pegawai, dan pembelian bahan baku.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-jurnal">
+                  <thead>
+                    <tr>
+                      <th>TANGGAL & NO. JURNAL</th>
+                      <th>TIPE REFERENSI</th>
+                      <th>KETERANGAN TRANSAKSI</th>
+                      <th>TOTAL DEBET</th>
+                      <th>TOTAL KREDIT</th>
+                      <th>STATUS</th>
+                      <th>DETAIL AKUN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-jurnal">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Chart of Accounts -->
+          <div class="sub-panel hidden" id="panel-finance-coa">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">COA MASTER</div>
+                  <h3 class="table-title">Daftar Akun Standar Coffee Shop</h3>
+                  <p class="table-subtitle">Klasifikasi akun keuangan terstruktur (Aset, Kewajiban, Ekuitas, Pendapatan, Beban).</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-coa">
+                  <thead>
+                    <tr>
+                      <th>KODE AKUN</th>
+                      <th>NAMA AKUN</th>
+                      <th>KLASIFIKASI TIPE</th>
+                      <th>SALDO NORMAL</th>
+                      <th>STATUS AKUN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-coa">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 3: Verifikasi & Persetujuan Pembelian Procurement -->
+          <div class="sub-panel hidden" id="panel-finance-approval">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">FINANCE VERIFICATION</div>
+                  <h3 class="table-title">Persetujuan Pengajuan Pembelian (Purchase Orders)</h3>
+                  <p class="table-subtitle">Permintaan pembelian dari procurement memerlukan persetujuan tim Finance. Bila disetujui, pembelian dapat dimasukkan ke daftar aktif dan dilaksanakan. Bila ditolak, pengajuan dibatalkan.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-finance-approval">
+                  <thead>
+                    <tr>
+                      <th>NOMOR PO & TANGGAL</th>
+                      <th>SUPPLIER</th>
+                      <th>RINCIAN BARANG & QTY</th>
+                      <th>ESTIMASI TOTAL BIAYA</th>
+                      <th>TIPE PENGAJUAN</th>
+                      <th>CATATAN PROCUREMENT</th>
+                      <th>STATUS PENGAJUAN</th>
+                      <th class="text-right">TINDAKAN FINANCE</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-finance-approval">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 4: Invoice & Tagihan Pembelian Barang -->
+          <div class="sub-panel hidden" id="panel-finance-invoice">
+            <div class="table-section">
+              <div class="table-header" style="flex-wrap: wrap; gap: 12px;">
+                <div class="table-title-group">
+                  <div class="table-badge">VENDOR INVOICES</div>
+                  <h3 class="table-title">Daftar Faktur Tagihan Supplier (Invoice Barang)</h3>
+                  <p class="table-subtitle">Faktur tagihan pengadaan bahan baku yang diterbitkan dari PO yang telah disetujui. Tim Finance dapat memproses pembayaran secara realtime dengan memotong kas/bank.</p>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                  <select id="filter-invoice-status" class="filter-select" style="width: 190px;" onchange="loadInvoicesData()">
+                    <option value="ALL">Semua Status Invoice</option>
+                    <option value="UNPAID" selected>Belum Dibayar (UNPAID)</option>
+                    <option value="PAID">Sudah Lunas (PAID)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-finance-invoices">
+                  <thead>
+                    <tr>
+                      <th>NO. INVOICE &amp; TANGGAL</th>
+                      <th>NOMOR PO &amp; SUPPLIER</th>
+                      <th>RINCIAN KOMODITAS</th>
+                      <th>JATUH TEMPO</th>
+                      <th>TOTAL TAGIHAN</th>
+                      <th>STATUS BAYAR</th>
+                      <th>INFORMASI PELUNASAN</th>
+                      <th class="text-right">TINDAKAN FINANCE</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-finance-invoices">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 3: HCM & PAYROLL                                          -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-hcm" data-module="hcm">
+          <!-- HCM KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-pegawai">
+              <div class="card-icon-wrapper pegawai-bg">👨‍🍳</div>
+              <div class="card-content">
+                <span class="card-label">Total Pegawai Aktif</span>
+                <h3 class="card-value" id="hcm-total-pegawai">12 Pegawai</h3>
+                <span class="trend-sub">100% Kontrak Valid</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">📅</div>
+              <div class="card-content">
+                <span class="card-label">Tingkat Kehadiran Bln Ini</span>
+                <h3 class="card-value text-safe">96.8%</h3>
+                <span class="trend-sub">Target 24 Hari Kerja</span>
+              </div>
+            </div>
+            <div class="kpi-card card-warning">
+              <div class="card-icon-wrapper warning-bg">⏱️</div>
+              <div class="card-content">
+                <span class="card-label">Total Keterlambatan</span>
+                <h3 class="card-value text-warning">35 Menit</h3>
+                <span class="trend-sub">Dipotong Rp 2.000/mnt</span>
+              </div>
+            </div>
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">💰</div>
+              <div class="card-content">
+                <span class="card-label">Beban Payroll Bulan Ini</span>
+                <h3 class="card-value" id="hcm-total-payroll">Rp 5.030.000</h3>
+                <span class="trend-sub">Slip Gaji Terbit: #1</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchHcmTab('pegawai')">👥 Data Pegawai</button>
+              <button class="sub-tab" onclick="switchHcmTab('absensi')">📋 Rekap Absensi (24 Hari)</button>
+              <button class="sub-tab" onclick="switchHcmTab('slip')">🧾 Generator Slip Gaji (Payslip)</button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-secondary btn-sm" onclick="handleSeedDemoHCM()">🔄 Buat Demo Absensi</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Data Pegawai -->
+          <div class="sub-panel" id="panel-hcm-pegawai">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">HUMAN CAPITAL</div>
+                  <h3 class="table-title">Daftar Karyawan Coffee Shop</h3>
+                  <p class="table-subtitle">Manajemen profil pegawai, jabatan, departemen, dan gaji pokok.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-pegawai">
+                  <thead>
+                    <tr>
+                      <th>KODE & NAMA PEGAWAI</th>
+                      <th>JABATAN</th>
+                      <th>DEPARTEMEN</th>
+                      <th>STATUS KERJA</th>
+                      <th>GAJI POKOK</th>
+                      <th>REKENING TRANSFER</th>
+                      <th class="text-right">AKSI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-pegawai">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Rekap Absensi -->
+          <div class="sub-panel hidden" id="panel-hcm-absensi">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">ATTENDANCE LOG</div>
+                  <h3 class="table-title">Log Kehadiran & Keterlambatan Pegawai</h3>
+                  <p class="table-subtitle">Data absensi harian yang menjadi dasar perhitungan tunjangan kehadiran & potongan denda.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-absensi">
+                  <thead>
+                    <tr>
+                      <th>TANGGAL</th>
+                      <th>NAMA PEGAWAI</th>
+                      <th>SHIFT KERJA</th>
+                      <th>JAM MASUK</th>
+                      <th>STATUS</th>
+                      <th>KETERLAMBATAN</th>
+                      <th>LEMBUR</th>
+                      <th>CATATAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-absensi">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 3: Slip Gaji Payslip Preview -->
+          <div class="sub-panel hidden" id="panel-hcm-slip">
+            <div class="payslip-wrapper">
+              <div class="payslip-box">
+                <div class="payslip-header">
+                  <div class="payslip-brand">
+                    <h2>KAFEINA COFFEE & ROASTERY</h2>
+                    <p>Jl. Senopati Raya No. 88, Kebayoran Baru, Jakarta Selatan</p>
+                  </div>
+                  <div class="payslip-meta">
+                    <span class="payslip-badge">SLIP GAJI RESMI</span>
+                    <h4 id="ps-nomor-slip">SLIP/2026/09/EMP-001</h4>
+                    <span id="ps-periode">Periode: September 2026</span>
+                  </div>
+                </div>
+
+                <div class="payslip-employee-info">
+                  <div class="info-group">
+                    <label>Nama Pegawai:</label>
+                    <strong id="ps-nama">Dimas Pratama</strong>
+                  </div>
+                  <div class="info-group">
+                    <label>Kode Pegawai:</label>
+                    <span id="ps-kode">EMP-001</span>
+                  </div>
+                  <div class="info-group">
+                    <label>Jabatan:</label>
+                    <span id="ps-jabatan">Head Barista</span>
+                  </div>
+                  <div class="info-group">
+                    <label>Rekening Bank:</label>
+                    <span id="ps-bank">BCA • 5270123456</span>
+                  </div>
+                </div>
+
+                <div class="payslip-table-grid">
+                  <!-- Penerimaan -->
+                  <div class="payslip-col">
+                    <h5 class="col-title income">A. PENERIMAAN (EARNINGS)</h5>
+                    <div class="line-item">
+                      <span>Gaji Pokok (Head Barista)</span>
+                      <strong id="ps-gaji-pokok">Rp 4.500.000</strong>
+                    </div>
+                    <div class="line-item">
+                      <span>Tunjangan Kehadiran (24/24 hari)</span>
+                      <strong id="ps-tunjangan">Rp 500.000</strong>
+                    </div>
+                    <div class="line-item">
+                      <span>Upah Lembur (4 Jam @ Rp 25.000)</span>
+                      <strong id="ps-lembur">Rp 100.000</strong>
+                    </div>
+                    <div class="line-total income">
+                      <span>Total Penerimaan Bruto</span>
+                      <strong id="ps-total-bruto">Rp 5.100.000</strong>
+                    </div>
+                  </div>
+
+                  <!-- Potongan -->
+                  <div class="payslip-col">
+                    <h5 class="col-title deduction">B. POTONGAN (DEDUCTIONS)</h5>
+                    <div class="line-item">
+                      <span>Potongan Terlambat (35 mnt @ Rp 2.000)</span>
+                      <strong class="text-danger" id="ps-potongan-telat">- Rp 70.000</strong>
+                    </div>
+                    <div class="line-item">
+                      <span>Iuran BPJS Ketenagakerjaan</span>
+                      <strong class="text-danger">Rp 0</strong>
+                    </div>
+                    <div class="line-total deduction">
+                      <span>Total Potongan</span>
+                      <strong class="text-danger" id="ps-total-potongan">- Rp 70.000</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Grand Total -->
+                <div class="payslip-net-box">
+                  <div class="net-title">
+                    <span>GAJI BERSIH (TAKE HOME PAY):</span>
+                    <h2 id="ps-gaji-bersih">Rp 5.030.000</h2>
+                  </div>
+                  <div class="terbilang-box">
+                    <span>Terbilang:</span>
+                    <em id="ps-terbilang">"Lima Juta Tiga Puluh Ribu Rupiah"</em>
+                  </div>
+                </div>
+
+                <div class="payslip-footer">
+                  <button class="btn btn-primary" onclick="handleKalkulasiPayroll(1)">⚡ Hitung Ulang Payroll Pegawai Ini</button>
+                  <button class="btn btn-secondary" onclick="window.print()">🖨️ Cetak Slip Gaji</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 4: PROCUREMENT & PURCHASE ORDERS (PO)                     -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-procurement" data-module="procurement">
+          <!-- Procurement KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">📑</div>
+              <div class="card-content">
+                <span class="card-label">Total Purchase Order</span>
+                <h3 class="card-value" id="proc-total-po">0 PO</h3>
+                <span class="trend-sub">Diterbitkan ke supplier</span>
+              </div>
+            </div>
+            <div class="kpi-card card-warning">
+              <div class="card-icon-wrapper warning-bg">⏳</div>
+              <div class="card-content">
+                <span class="card-label">PO Menunggu Terima</span>
+                <h3 class="card-value text-warning" id="proc-pending-po">0 Draf/Order</h3>
+                <span class="trend-sub">Menunggu Pengiriman</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">🤝</div>
+              <div class="card-content">
+                <span class="card-label">Supplier Rekanan</span>
+                <h3 class="card-value" id="proc-total-supplier">3 Rekanan</h3>
+                <span class="trend-sub">Roastery, Dairy, Syrup</span>
+              </div>
+            </div>
+            <div class="kpi-card card-pegawai">
+              <div class="card-icon-wrapper pegawai-bg">📦</div>
+              <div class="card-content">
+                <span class="card-label">Metode HPP Persediaan</span>
+                <h3 class="card-value text-safe">Moving Average</h3>
+                <span class="trend-sub">Otomatis saat GRN</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchProcurementTab('po')">📜 Daftar Purchase Order (PO)</button>
+              <button class="sub-tab" onclick="switchProcurementTab('supplier')">🏢 Data Supplier Rekanan</button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-po')">+ Ajukan Pembelian ke Finance</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Daftar PO -->
+          <div class="sub-panel" id="panel-procurement-po">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">PROCUREMENT & APPROVAL LOG</div>
+                  <h3 class="table-title">Daftar Pengadaan Bahan Baku (PO)</h3>
+                  <p class="table-subtitle">Pengajuan pembelian bahan baku ke Finance. Setelah disetujui Finance, pembelian aktif dalam daftar &amp; dapat dilaksanakan (terima barang). Jika ditolak, pengajuan dibatalkan.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-po">
+                  <thead>
+                    <tr>
+                      <th>NOMOR PO & TANGGAL</th>
+                      <th>SUPPLIER</th>
+                      <th>KOMODITAS & JUMLAH</th>
+                      <th>TOTAL ESTIMASI BIAYA</th>
+                      <th>TIPE PENERBITAN</th>
+                      <th>STATUS PO</th>
+                      <th class="text-right">TINDAKAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-po">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Supplier Rekanan -->
+          <div class="sub-panel hidden" id="panel-procurement-supplier">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">VENDOR LIST</div>
+                  <h3 class="table-title">Daftar Supplier Resmi</h3>
+                  <p class="table-subtitle">Mitra pemasok biji kopi sangrai (roastery), susu segar, sirup perisa, dan kemasan.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-supplier">
+                  <thead>
+                    <tr>
+                      <th>NAMA SUPPLIER</th>
+                      <th>CONTACT PERSON</th>
+                      <th>NO. TELEPON</th>
+                      <th>EMAIL</th>
+                      <th>ALAMAT GUDANG</th>
+                      <th>KOMODITAS UTAMA</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-supplier">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- ============================================================== -->
+        <!-- VIEW 5: INVENTORY & STOCK MANAGEMENT                           -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-inventory" data-module="inventory">
+          <!-- Inventory KPIs -->
+          <div class="kpi-grid">
+            <div class="kpi-card card-aset">
+              <div class="card-icon-wrapper aset-bg">📦</div>
+              <div class="card-content">
+                <span class="card-label">Total Jenis Komoditas</span>
+                <h3 class="card-value" id="inv-total-sku">6 SKU</h3>
+                <span class="trend-sub">Beans, Dairy, Syrup, Pack</span>
+              </div>
+            </div>
+            <div class="kpi-card card-warning">
+              <div class="card-icon-wrapper warning-bg">⚠️</div>
+              <div class="card-content">
+                <span class="card-label">Bahan Perlu Reorder</span>
+                <h3 class="card-value text-warning" id="inv-reorder-count">3 Item</h3>
+                <span class="trend-sub">&le; Batas Safety Stock</span>
+              </div>
+            </div>
+            <div class="kpi-card card-kas">
+              <div class="card-icon-wrapper kas-bg">💎</div>
+              <div class="card-content">
+                <span class="card-label">Total Nilai Persediaan</span>
+                <h3 class="card-value" id="inv-total-nilai">Rp 14.850.000</h3>
+                <span class="trend-sub">Dihitung dari HPP Rata-rata</span>
+              </div>
+            </div>
+            <div class="kpi-card card-pegawai">
+              <div class="card-icon-wrapper pegawai-bg">🔄</div>
+              <div class="card-content">
+                <span class="card-label">Auto-Trigger PO</span>
+                <h3 class="card-value text-safe">AKTIF</h3>
+                <span class="trend-sub">Otomatis buat draf PO</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Tabs Navigation -->
+          <div class="sub-tabs-container">
+            <div class="sub-tabs">
+              <button class="sub-tab active" onclick="switchInventoryTab('stock')">⚠️ Safety Stock Warning & Reorder</button>
+              <button class="sub-tab" onclick="switchInventoryTab('mutasi')">📜 Riwayat Mutasi Stok (Kartu Stok)</button>
+            </div>
+            <div class="tab-actions">
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-tambah-barang')">✨ + Tambah Bahan Baku Baru</button>
+              <button class="btn btn-secondary btn-sm" onclick="openModal('modal-mutasi')">📉 - Catat Pemakaian Bahan</button>
+            </div>
+          </div>
+
+          <!-- Sub Panel 1: Safety Stock Warning -->
+          <div class="sub-panel" id="panel-inventory-stock">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">INVENTORY ALERT</div>
+                  <h3 class="table-title">Daftar Peringatan Safety Stock &amp; Quality Control</h3>
+                  <p class="table-subtitle">Barang yang stok fisiknya telah berada di bawah batas minimum dan pengawasan mutu persediaan (Quality Stock Grade A/B).</p>
+                </div>
+
+                <div class="table-actions">
+                  <div class="search-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="search-input" placeholder="Cari bahan atau kode...">
+                  </div>
+
+                  <select id="filter-kategori" class="filter-select">
+                    <option value="ALL">Semua Kategori</option>
+                    <option value="Coffee Beans">Coffee Beans</option>
+                    <option value="Dairy">Dairy &amp; Milk</option>
+                    <option value="Syrup">Syrups &amp; Sauces</option>
+                    <option value="Packaging">Packaging</option>
+                    <option value="Powder & Flavor">Powder &amp; Flavor</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Table Container -->
+              <div class="table-responsive">
+                <table class="modern-table" id="table-safety-stock">
+                  <thead>
+                    <tr>
+                      <th>KODE &amp; NAMA BARANG</th>
+                      <th>KATEGORI</th>
+                      <th>MUTU (QUALITY STOCK)</th>
+                      <th>STOK SAAT INI</th>
+                      <th>BATAS SAFETY</th>
+                      <th>STATUS PERSEDIAAN</th>
+                      <th>ESTIMASI REORDER</th>
+                      <th class="text-right">TINDAKAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-stock">
+                    <!-- Data di-render dinamis oleh app.js via fetch API -->
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="table-footer">
+                <div class="table-meta" id="table-meta-info">Menampilkan data...</div>
+                <div class="table-legend">
+                  <span class="legend-item"><span class="legend-dot critical"></span> Kritis (&le; 50% Safety)</span>
+                  <span class="legend-item"><span class="legend-dot warning"></span> Perlu Reorder (&le; Safety)</span>
+                  <span class="legend-item"><span class="legend-dot safe"></span> Aman</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sub Panel 2: Riwayat Mutasi Stok -->
+          <div class="sub-panel hidden" id="panel-inventory-mutasi">
+            <div class="table-section">
+              <div class="table-header">
+                <div class="table-title-group">
+                  <div class="table-badge">STOCK MUTATION</div>
+                  <h3 class="table-title">Riwayat Mutasi Persediaan (Kartu Stok Terintegrasi)</h3>
+                  <p class="table-subtitle">Pencatatan real-time seluruh barang masuk dari PO supplier dan barang keluar pemakaian operasional.</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="modern-table" id="table-mutasi">
+                  <thead>
+                    <tr>
+                      <th>WAKTU MUTASI</th>
+                      <th>NAMA BAHAN BAKU</th>
+                      <th>TIPE MUTASI</th>
+                      <th>MASUK</th>
+                      <th>KELUAR</th>
+                      <th>SALDO AKHIR</th>
+                      <th>REFERENSI / KETERANGAN</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-mutasi">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- MODULE 6: USER MANAGEMENT & RBAC (MANAGER ONLY)                 -->
+        <!-- ============================================================== -->
+        <section class="module-view hidden" id="view-users" data-module="users">
+          <!-- View Header -->
+          <div class="view-header">
+            <div>
+              <h2 class="view-title">👥 Manajemen Akun &amp; Hak Akses</h2>
+              <p class="view-desc">Kelola akun staf, atur izin akses modul, dan status akun sistem ERP</p>
+            </div>
+            <div class="view-actions">
+              <button class="btn btn-secondary" onclick="loadUsersData()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+                <span>Segarkan</span>
+              </button>
+              <button class="btn btn-primary" onclick="openModal('modal-create-user')">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <line x1="19" y1="8" x2="19" y2="14"></line>
+                  <line x1="22" y1="11" x2="16" y2="11"></line>
+                </svg>
+                <span>+ Buat Akun Baru</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Clean Horizontal Filter & Stats Strip -->
+          <div class="user-stats-strip">
+            <div class="user-stat-pill active" onclick="setRoleFilter('ALL')" id="filter-pill-all" title="Tampilkan semua akun">
+              <span class="user-stat-dot"></span>
+              <span class="user-stat-label">Semua Akun</span>
+              <strong class="user-stat-num" id="count-role-all">4</strong>
+            </div>
+            <div class="user-stat-pill" onclick="setRoleFilter('MANAGER')" id="filter-pill-manager" title="Filter hanya Manager">
+              <span class="user-stat-dot dot-manager"></span>
+              <span class="user-stat-label">Manager</span>
+              <strong class="user-stat-num" id="count-role-manager">1</strong>
+            </div>
+            <div class="user-stat-pill" onclick="setRoleFilter('FINANCE')" id="filter-pill-finance" title="Filter hanya Finance">
+              <span class="user-stat-dot dot-finance"></span>
+              <span class="user-stat-label">Finance</span>
+              <strong class="user-stat-num" id="count-role-finance">1</strong>
+            </div>
+            <div class="user-stat-pill" onclick="setRoleFilter('HR')" id="filter-pill-hr" title="Filter hanya HR">
+              <span class="user-stat-dot dot-hr"></span>
+              <span class="user-stat-label">HR</span>
+              <strong class="user-stat-num" id="count-role-hr">1</strong>
+            </div>
+            <div class="user-stat-pill" onclick="setRoleFilter('PROCUREMENT')" id="filter-pill-procurement" title="Filter hanya Procurement">
+              <span class="user-stat-dot dot-procurement"></span>
+              <span class="user-stat-label">Procurement</span>
+              <strong class="user-stat-num" id="count-role-procurement">1</strong>
+            </div>
+          </div>
+
+          <!-- Main Table Card with Search -->
+          <div class="card" style="margin-top: 8px;">
+            <div class="card-header" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 20px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-weight: 700; color: var(--text-heading); font-size: 0.98rem;">Daftar Akun Pengguna</span>
+                <span class="badge-status safe" id="users-count-badge" style="font-size: 0.72rem; padding: 2px 8px;">4 Terdaftar</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="text" id="users-search-input" class="form-control" placeholder="🔍 Cari nama atau username..." oninput="handleSearchUsers(this.value)" style="width: 260px; font-size: 0.84rem; padding: 7px 12px; height: 36px;">
+              </div>
+            </div>
+
+            <div class="card-body" style="padding: 0;">
+              <div class="table-responsive" style="border: none; border-radius: 0 0 12px 12px;">
+                <table class="modern-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 60px;">ID</th>
+                      <th>PENGGUNA</th>
+                      <th>ROLE / JABATAN</th>
+                      <th>MODUL DIAKSES</th>
+                      <th style="width: 110px;">STATUS</th>
+                      <th style="width: 160px; text-align: right;">AKSI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="table-body-users">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+
+  <!-- ============================================================== -->
+  <!-- 3. MODAL DIALOGS INTERAKTIF                                    -->
+  <!-- ============================================================== -->
+
+  <!-- Modal Buat PO -->
+  <div class="modal-backdrop" id="modal-po">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📦 Ajukan Pembelian Bahan Baku (PO ke Finance)</h3>
+        <button class="modal-close" onclick="closeModal('modal-po')">&times;</button>
+      </div>
+      <form id="form-create-po" onsubmit="submitCreatePo(event)">
+        <div style="background: var(--green-sage-bg); border-left: 4px solid var(--green-deep); padding: 10px 14px; margin-bottom: 16px; border-radius: 6px; font-size: 0.83rem; line-height: 1.45; color: var(--text-heading);">
+          ℹ️ <strong>Alur Otorisasi:</strong> Pengajuan ini akan otomatis masuk ke <strong>Modul Finance</strong> untuk diverifikasi &amp; disetujui. Setelah disetujui Finance, pembelian aktif dan dapat dilaksanakan.
+        </div>
+        <div class="form-group">
+          <label>Pilih Supplier Rekanan</label>
+          <select id="po-supplier-select" class="form-control" required>
+            <option value="1">CV Nusantara Coffee Roastery (Kopi)</option>
+            <option value="2">PT Sumber Dairy Sejahtera (Susu)</option>
+            <option value="3">Distributor Sirup Premium (Sirup)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <label style="margin-bottom: 0;">Bahan Baku yang Dipesan</label>
+            <button type="button" class="btn btn-secondary btn-sm" onclick="openModal('modal-tambah-barang')" style="padding: 2px 8px; font-size: 0.74rem; color: var(--green-deep); font-weight: 700;">
+              ✨ + Tambah Bahan Baku Baru
+            </button>
+          </div>
+          <select id="po-barang-select" class="form-control" required onchange="onPoBarangChange()">
+            <option value="1">Arabica House Blend 70/30 (gr)</option>
+            <option value="2">Greenfields Fresh Milk Pasteurized (ml)</option>
+            <option value="3">Monin Salted Caramel Syrup (ml)</option>
+            <option value="5">Hot Paper Cup 8oz + Lid (pcs)</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Jumlah Pesan</label>
+            <input type="number" id="po-jumlah-input" class="form-control" placeholder="Contoh: 5000" required min="1">
+          </div>
+          <div class="form-group">
+            <label>Estimasi Harga Satuan (Rp)</label>
+            <input type="number" id="po-harga-input" class="form-control" placeholder="Contoh: 300" required min="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan / Alasan Pengadaan</label>
+          <textarea id="po-catatan-input" class="form-control" rows="2" placeholder="Pesanan reguler stok mingguan..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-po')">Batal</button>
+          <button type="submit" class="btn btn-primary">Kirim Pengajuan ke Finance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Setujui Pembelian (Finance Approval) -->
+  <div class="modal-backdrop" id="modal-finance-approve">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>✓ Persetujuan Pembelian Bahan Baku</h3>
+        <button class="modal-close" onclick="closeModal('modal-finance-approve')">&times;</button>
+      </div>
+      <form id="form-finance-approve" onsubmit="submitFinanceApprove(event)">
+        <input type="hidden" id="fa-po-id">
+        <div id="approve-po-summary" style="background: var(--green-sage-bg); border: 1px solid var(--border-highlight); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: var(--text-heading);">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-group">
+          <label>Disetujui Oleh (Staf/Manajer Finance)</label>
+          <input type="text" id="fa-disetujui-oleh" class="form-control" value="Finance Manager" required>
+        </div>
+        <div class="form-group">
+          <label>Catatan / Rekomendasi Finance (Opsional)</label>
+          <textarea id="fa-catatan" class="form-control" rows="2" placeholder="Anggaran pengadaan disetujui. Lanjutkan pemesanan ke vendor..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-finance-approve')">Batal</button>
+          <button type="submit" class="btn btn-primary" style="background: var(--green-deep);">Setujui &amp; Aktifkan Pembelian</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tolak Pengajuan Pembelian (Finance Rejection) -->
+  <div class="modal-backdrop" id="modal-finance-reject">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 style="color: #dc2626;">✗ Tolak Pengajuan Pembelian (Batal)</h3>
+        <button class="modal-close" onclick="closeModal('modal-finance-reject')">&times;</button>
+      </div>
+      <form id="form-finance-reject" onsubmit="submitFinanceReject(event)">
+        <input type="hidden" id="fr-po-id">
+        <div id="reject-po-summary" style="background: #fee2e2; border: 1px solid #fca5a5; padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: #7f1d1d;">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-group">
+          <label>Ditolak Oleh (Staf/Manajer Finance)</label>
+          <input type="text" id="fr-ditolak-oleh" class="form-control" value="Finance Manager" required>
+        </div>
+        <div class="form-group">
+          <label>Alasan Penolakan (Wajib Diisi)</label>
+          <textarea id="fr-alasan" class="form-control" rows="3" placeholder="Sebutkan alasan penolakan anggaran (misal: kuota belanja bulanan telah habis, atau gunakan stok cabang lain)..." required></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-finance-reject')">Kembali</button>
+          <button type="submit" class="btn" style="background: #dc2626; color: #ffffff; font-weight: 700;">Tolak &amp; Batalkan Pengajuan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Jurnal Manual -->
+  <div class="modal-backdrop" id="modal-jurnal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>⚖️ Input Jurnal Umum Manual</h3>
+        <button class="modal-close" onclick="closeModal('modal-jurnal')">&times;</button>
+      </div>
+      <form id="form-create-jurnal" onsubmit="submitCreateJurnal(event)">
+        <div class="form-group">
+          <label>Keterangan Transaksi</label>
+          <input type="text" id="jm-keterangan" class="form-control" placeholder="Contoh: Pembayaran listrik & internet outlet" required>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Akun Debet</label>
+            <select id="jm-akun-debet" class="form-control" required>
+              <option value="9">6-1002 - Beban Operasional Kas Kecil</option>
+              <option value="7">5-1001 - Beban Pokok Penjualan (HPP)</option>
+              <option value="3">1-1020 - Persediaan Bahan Baku</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Akun Kredit</label>
+            <select id="jm-akun-kredit" class="form-control" required>
+              <option value="1">1-1001 - Kas Toko / Kasir</option>
+              <option value="2">1-1002 - Bank BCA Operasional</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nominal Transaksi (Rp)</label>
+          <input type="number" id="jm-nominal" class="form-control" placeholder="Contoh: 450000" required min="1000">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-jurnal')">Batal</button>
+          <button type="submit" class="btn btn-primary">Posting Jurnal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Catat Mutasi Keluar & Pemakaian Bahan Baku -->
+  <div class="modal-backdrop" id="modal-mutasi">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>📉 Catat Pemakaian Bahan Baku (Sesuai Stok)</h3>
+        <button class="modal-close" onclick="closeModal('modal-mutasi')">&times;</button>
+      </div>
+      <form id="form-create-mutasi" onsubmit="submitCatatPemakaian(event)">
+        <div class="form-group">
+          <label>Pilih Bahan Baku yang Digunakan</label>
+          <select id="mut-barang-select" class="form-control" required onchange="onMutasiBarangChange()">
+            <!-- Populated dynamically by JS -->
+          </select>
+          <div id="mut-stok-indicator" class="stock-live-pill">
+            📦 Stok Tersedia Saat Ini: <span id="mut-stok-available" style="font-weight: 800; color: var(--green-deep);">0</span> <span id="mut-stok-unit">unit</span>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Jumlah Pemakaian</label>
+            <input type="number" id="mut-jumlah-input" class="form-control" placeholder="Contoh: 250" required min="0.01" step="any" oninput="validateMutasiQty()">
+            <div id="mut-warning-msg" class="stock-exceeded-alert">
+              ⚠️ Jumlah pemakaian melebihi stok yang ada! Silakan kurangi jumlah pemakaian.
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Keperluan Pemakaian</label>
+            <select id="mut-tipe-select" class="form-control" required>
+              <option value="OUT_SALES_POS">Pemakaian Shift Barista (Racikan Kopi / POS)</option>
+              <option value="OUT_WASTE">Waste / Biji Kopi Rusak / Kalibrasi Grinder</option>
+              <option value="OUT_ADJUSTMENT">Penyesuaian Fisik Stok Opname</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nama Barista / Penanggung Jawab</label>
+            <input type="text" id="mut-barista-input" class="form-control" placeholder="Contoh: Dimas Pratama (Head Barista)" value="Barista On Duty" required>
+          </div>
+          <div class="form-group">
+            <label>Keterangan / Jam Shift</label>
+            <input type="text" id="mut-keterangan-input" class="form-control" placeholder="Contoh: Pemakaian shift pagi untuk 50 cup latte">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-mutasi')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-mutasi">Simpan Catatan Pemakaian</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Bahan Baku Baru (Custom Raw Material) -->
+  <div class="modal-backdrop" id="modal-tambah-barang">
+    <div class="modal-box" style="max-width: 540px;">
+      <div class="modal-header">
+        <h3>✨ Tambah Bahan Baku Baru ke Inventaris</h3>
+        <button class="modal-close" onclick="closeModal('modal-tambah-barang')">&times;</button>
+      </div>
+      <form id="form-tambah-barang" onsubmit="submitTambahBarang(event)">
+        <div class="form-group">
+          <label>Nama Bahan Baku Baru *</label>
+          <input type="text" id="nb-nama" class="form-control" placeholder="Contoh: Matcha Powder Ceremonial Uji" required>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Kategori Bahan *</label>
+            <select id="nb-kategori" class="form-control" required>
+              <option value="Coffee Beans">Coffee Beans (Biji Kopi)</option>
+              <option value="Dairy">Dairy &amp; Fresh Milk</option>
+              <option value="Syrup">Syrups &amp; Sauces</option>
+              <option value="Powder & Flavor">Powder &amp; Flavor (Bubuk)</option>
+              <option value="Packaging">Packaging &amp; Cup</option>
+              <option value="Lainnya">Lainnya / Bahan Pendukung</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Satuan Pengukuran *</label>
+            <select id="nb-satuan" class="form-control" required>
+              <option value="gr">gr (Gram)</option>
+              <option value="ml">ml (Mililiter)</option>
+              <option value="pcs">pcs (Pieces / Lembar)</option>
+              <option value="kg">kg (Kilogram)</option>
+              <option value="liter">liter (Liter)</option>
+              <option value="botol">botol (Botol)</option>
+              <option value="pack">pack (Pack)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Batas Safety Stock Minimum *</label>
+            <input type="number" id="nb-safety-stock" class="form-control" placeholder="Contoh: 1000" required min="1">
+          </div>
+          <div class="form-group">
+            <label>Estimasi Harga Pokok / Beli Satuan (Rp) *</label>
+            <input type="number" id="nb-harga" class="form-control" placeholder="Contoh: 350" required min="1">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Quality Grade Default</label>
+            <select id="nb-quality-grade" class="form-control" required>
+              <option value="GRADE_A" selected>⭐ Grade A (Specialty / Prima)</option>
+              <option value="GRADE_B">🔹 Grade B (Commercial Standard)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Supplier Rekanan Utama</label>
+            <select id="nb-supplier" class="form-control">
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Stok Awal Fisik Saat Ini (Opsional)</label>
+          <input type="number" id="nb-stok-awal" class="form-control" placeholder="0 jika belum ada fisik barang di gudang" value="0" min="0">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-tambah-barang')">Batal</button>
+          <button type="submit" class="btn btn-primary">+ Daftarkan Bahan Baku</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Pembayaran Invoice Tagihan Barang (Finance) -->
+  <div class="modal-backdrop" id="modal-pay-invoice">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>💳 Pembayaran Invoice Pembelian Bahan Baku</h3>
+        <button class="modal-close" onclick="closeModal('modal-pay-invoice')">&times;</button>
+      </div>
+      <form id="form-pay-invoice" onsubmit="submitPayInvoice(event)">
+        <input type="hidden" id="pay-inv-id">
+        <div id="pay-inv-summary" style="background: var(--green-sage-bg); border: 1px solid var(--border-highlight); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: var(--text-heading);">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-group">
+          <label>Pilih Sumber Rekening / Kas Pengeluaran *</label>
+          <select id="pay-inv-akun-kas" class="form-control" required>
+            <option value="2" selected>Bank BCA Operasional (Akun #1-1002)</option>
+            <option value="1">Kas Toko / Kasir Tunai (Akun #1-1001)</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Metode Pembayaran</label>
+            <select id="pay-inv-metode" class="form-control" required>
+              <option value="TRANSFER_BCA">Transfer Bank BCA</option>
+              <option value="KAS_TUNAI">Tunai / Cash Toko</option>
+              <option value="GIRO">Cek / Giro Bank</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Dibayar Oleh (Staf/Finance)</label>
+            <input type="text" id="pay-inv-dibayar-oleh" class="form-control" value="Finance Specialist" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan Pembayaran / No Referensi Transfer</label>
+          <input type="text" id="pay-inv-catatan" class="form-control" placeholder="Contoh: Bukti Transfer BCA Ref #8821901">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-pay-invoice')">Batal</button>
+          <button type="submit" class="btn btn-primary" style="background: var(--green-deep);">Konfirmasi &amp; Bayar Lunas</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Input / Tambah Data Keuangan & Saldo Kas Realtime -->
+  <div class="modal-backdrop" id="modal-finance-cash">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>💰 Input / Penyesuaian Dana Kas &amp; Bank Realtime</h3>
+        <button class="modal-close" onclick="closeModal('modal-finance-cash')">&times;</button>
+      </div>
+      <form id="form-finance-cash" onsubmit="submitFinanceCash(event)">
+        <div class="form-group">
+          <label>Jenis Transaksi Keuangan *</label>
+          <select id="fc-tipe" class="form-control" required>
+            <option value="PEMASUKAN_MODAL" selected>Setoran Modal Pemilik / Tambahan Dana Operasional</option>
+            <option value="PENJUALAN_KASIR">Pemasukan Penjualan Harian Kasir Outlet</option>
+            <option value="SET_SALDO_AWAL">Penetapan Saldo Awal Kas / Bank</option>
+            <option value="PENDAPATAN_LAIN">Pendapatan Operasional Lainnya</option>
+          </select>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Akun Tujuan Kas/Bank *</label>
+            <select id="fc-akun" class="form-control" required>
+              <option value="2" selected>Bank BCA Operasional (Akun #1-1002)</option>
+              <option value="1">Kas Toko / Kasir (Akun #1-1001)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Nominal Dana (Rp) *</label>
+            <input type="number" id="fc-nominal" class="form-control" placeholder="Contoh: 10000000" required min="1000" step="1000">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Keterangan / Sumber Dana Transaksi *</label>
+          <input type="text" id="fc-keterangan" class="form-control" placeholder="Contoh: Injeksi modal pemilik outlet atau omset kasir tanggal hari ini" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-finance-cash')">Batal</button>
+          <button type="submit" class="btn btn-primary">+ Simpan &amp; Perbarui Saldo Uang</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Preview / Cetak Faktur Invoice -->
+  <div class="modal-backdrop" id="modal-preview-invoice">
+    <div class="modal-box" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3>📄 Faktur Invoice Pembelian Bahan Baku</h3>
+        <button class="modal-close" onclick="closeModal('modal-preview-invoice')">&times;</button>
+      </div>
+      <div id="invoice-preview-container">
+        <!-- Populated dynamically by JS -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('modal-preview-invoice')">Tutup</button>
+        <button type="button" class="btn btn-primary" onclick="window.print()">🖨️ Cetak Faktur</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Terima Barang & Quality Stock Inspection (QC) -->
+  <div class="modal-backdrop" id="modal-terima-barang-qc">
+    <div class="modal-box" style="max-width: 580px;">
+      <div class="modal-header">
+        <h3>🔍 Penerimaan Barang &amp; Inspeksi Kualitas (Quality Stock)</h3>
+        <button class="modal-close" onclick="closeModal('modal-terima-barang-qc')">&times;</button>
+      </div>
+      <form id="form-terima-barang-qc" onsubmit="submitTerimaBarangQc(event)">
+        <input type="hidden" id="qc-po-id">
+        <input type="hidden" id="qc-barang-id">
+        <input type="hidden" id="qc-harga-beli">
+        <div id="qc-po-summary" style="background: var(--green-sage-bg); border: 1px solid var(--border-highlight); padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 0.85rem; line-height: 1.5; color: var(--text-heading);">
+          <!-- Dynamic summary populated by JS -->
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nomor Surat Jalan Vendor</label>
+            <input type="text" id="qc-no-surat-jalan" class="form-control" placeholder="Contoh: SJ-2026-X88" required>
+          </div>
+          <div class="form-group">
+            <label>Diterima Oleh (Barista/Staff)</label>
+            <input type="text" id="qc-diterima-oleh" class="form-control" value="Barista / QC Inspector" required>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Hasil Uji Quality Stock (Grade Mutu) *</label>
+            <select id="qc-quality-grade" class="form-control" required>
+              <option value="GRADE_A" selected>⭐ Grade A (Specialty / Prima - 100% Lolos)</option>
+              <option value="GRADE_B">🔹 Grade B (Commercial Standard)</option>
+              <option value="GRADE_C">⚠️ Grade C (Substandard / Karantina)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Jumlah Fisik Total Diterima</label>
+            <input type="number" id="qc-qty-total" class="form-control" required min="1" step="any" oninput="calculateQcSplit()">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label style="color: var(--green-deep); font-weight: 700;">Jumlah Lolos QC (Masuk Stok Gudang)</label>
+            <input type="number" id="qc-qty-lolos" class="form-control" required min="0" step="any">
+          </div>
+          <div class="form-group">
+            <label style="color: #b91c1c; font-weight: 700;">Jumlah Reject / Cacat / Basi (Retur)</label>
+            <input type="number" id="qc-qty-reject" class="form-control" value="0" min="0" step="any">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nomor Batch Roasting / Pabrik</label>
+            <input type="text" id="qc-batch-number" class="form-control" placeholder="Contoh: BATCH-ROAST-991">
+          </div>
+          <div class="form-group">
+            <label>Tanggal Kadaluarsa (Expiry Date)</label>
+            <input type="date" id="qc-expiry-date" class="form-control">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Catatan Uji Organoleptik &amp; Fisik Barista</label>
+          <textarea id="qc-catatan" class="form-control" rows="2" placeholder="Kemasan tersegel rapi, aroma harum khas arabica gayo, tidak ada kelembaban berlebih..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-terima-barang-qc')">Batal</button>
+          <button type="submit" class="btn btn-primary" style="background: var(--green-deep);">✓ Simpan Penerimaan &amp; Terbitkan Invoice Tagihan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Buat User Baru (Manager Only) -->
+  <div class="modal-backdrop" id="modal-create-user">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>👤 Buat Akun Pengguna Baru</h3>
+        <button class="modal-close" onclick="closeModal('modal-create-user')">&times;</button>
+      </div>
+      <form id="form-create-user" onsubmit="submitCreateUser(event)">
+        <div class="form-group">
+          <label>Nama Lengkap Staf *</label>
+          <input type="text" id="usr-nama-input" class="form-control" placeholder="Contoh: Rina Kusuma" required>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Username *</label>
+            <input type="text" id="usr-username-input" class="form-control" placeholder="Contoh: rina_finance" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Password *</label>
+            <input type="password" id="usr-password-input" class="form-control" placeholder="Minimal 4 karakter" required minlength="4">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Pilih Role & Hak Akses *</label>
+          <select id="usr-role-select" class="form-control" required onchange="updateRoleDescriptionPreview()">
+            <option value="MANAGER">👑 MANAGER - Akses Semua Fitur (Dashboard, Inventory, Finance, HR, Procurement, Users)</option>
+            <option value="FINANCE">💰 FINANCE - Hanya Modul Finance & Buku Jurnal</option>
+            <option value="HR">👥 HR - Hanya Modul Human Capital & Payroll</option>
+            <option value="PROCUREMENT">📦 PROCUREMENT - Modul Procurement &amp; Inventory Stok</option>
+          </select>
+          <div id="role-preview-box" style="margin-top: 8px; font-size: 0.82rem; padding: 8px 12px; background: rgba(36, 117, 89, 0.08); border-radius: 6px; color: var(--green-deep); line-height: 1.4;">
+            ℹ️ Role ini memiliki hak akses penuh ke seluruh modul sistem ERP.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-create-user')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-user">+ Simpan Pengguna Baru</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Ganti Akun / Switch User (Login RBAC) -->
+  <div class="modal-backdrop" id="modal-switch-user">
+    <div class="modal-box" style="max-width: 600px;">
+      <div class="modal-header">
+        <div>
+          <h3>🔐 Pilih Akun / Ganti Pengguna</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin: 4px 0 0 0;">Uji coba 4 role pengguna berbeda untuk melihat pembatasan modul secara langsung</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-switch-user')">&times;</button>
+      </div>
+
+      <!-- Quick Role Switcher Buttons -->
+      <div style="font-weight: 600; font-size: 0.88rem; margin-bottom: 10px; color: var(--text-heading);">⚡ Akses Cepat 4 Akun Bawaan:</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+        <button type="button" class="btn-role-quick" onclick="quickLogin('manager', 'manager123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">👑</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">Manager (Owner)</strong>
+            <span class="badge-status safe" style="margin-left: auto; font-size: 0.65rem;">SEMUA FITUR</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Fikri &bull; Akses semua modul</span>
+        </button>
+
+        <button type="button" class="btn-role-quick" onclick="quickLogin('finance', 'finance123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">💰</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">User Finance</strong>
+            <span class="badge-status warning" style="margin-left: auto; font-size: 0.65rem;">FINANCE ONLY</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Staff Finance &bull; Hanya Keuangan & CoA</span>
+        </button>
+
+        <button type="button" class="btn-role-quick" onclick="quickLogin('hr', 'hr123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">👥</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">User HR</strong>
+            <span class="badge-status safe" style="margin-left: auto; font-size: 0.65rem;">HR ONLY</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Staff HR &bull; Hanya HCM & Payroll</span>
+        </button>
+
+        <button type="button" class="btn-role-quick" onclick="quickLogin('procurement', 'procurement123')" style="display: flex; flex-direction: column; align-items: flex-start; text-align: left; padding: 12px; border: 1.5px solid var(--border-color); border-radius: 10px; background: var(--bg-surface); cursor: pointer; transition: all 0.2s;">
+          <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+            <span style="font-size: 1.2rem;">📦</span>
+            <strong style="color: var(--text-heading); font-size: 0.9rem;">User Procurement</strong>
+            <span class="badge-status warning" style="margin-left: auto; font-size: 0.65rem;">PO &amp; STOK</span>
+          </div>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Staff Purchasing &bull; Procurement &amp; Stok</span>
+        </button>
+      </div>
+
+      <!-- Manual Login Form -->
+      <div style="border-top: 1px dashed var(--border-color); padding-top: 16px;">
+        <div style="font-weight: 600; font-size: 0.88rem; margin-bottom: 10px; color: var(--text-heading);">Atau Masuk dengan Akun Kustom:</div>
+        <form id="form-login-custom" onsubmit="submitCustomLogin(event)">
+          <div class="form-grid-2">
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="login-username" class="form-control" placeholder="Masukkan username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="login-password" class="form-control" placeholder="Masukkan password" required autocomplete="current-password">
+            </div>
+          </div>
+          <div class="modal-footer" style="padding-bottom: 0; padding-right: 0;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal('modal-switch-user')">Tutup</button>
+            <button type="submit" class="btn btn-primary">Masuk</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Edit User (Manager Only - CRUD Update) -->
+  <div class="modal-backdrop" id="modal-edit-user">
+    <div class="modal-box" style="max-width: 520px;">
+      <div class="modal-header">
+        <h3>✏️ Edit Data Pengguna</h3>
+        <button class="modal-close" onclick="closeModal('modal-edit-user')">&times;</button>
+      </div>
+      <form id="form-edit-user" onsubmit="submitEditUser(event)">
+        <input type="hidden" id="edit-usr-id">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="edit-usr-username" class="form-control" readonly style="background: var(--bg-surface); opacity: 0.8; cursor: not-allowed;">
+            <small style="color: var(--text-muted); font-size: 0.72rem;">Username tidak dapat diubah</small>
+          </div>
+          <div class="form-group">
+            <label>Status Akun</label>
+            <select id="edit-usr-status" class="form-control">
+              <option value="true">Aktif</option>
+              <option value="false">Nonaktif / Ditangguhkan</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Nama Lengkap Staf *</label>
+          <input type="text" id="edit-usr-nama" class="form-control" required placeholder="Contoh: Rina Kusuma">
+        </div>
+
+        <div class="form-group">
+          <label>Role &amp; Hak Akses *</label>
+          <select id="edit-usr-role" class="form-control" required>
+            <option value="MANAGER">👑 MANAGER - Akses Semua Fitur</option>
+            <option value="FINANCE">💰 FINANCE - Modul Finance &amp; CoA</option>
+            <option value="HR">👥 HR - Modul HCM &amp; Payroll</option>
+            <option value="PROCUREMENT">📦 PROCUREMENT - Modul Procurement &amp; Inventory Stok</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Password Baru (Opsional)</label>
+          <input type="password" id="edit-usr-password" class="form-control" placeholder="Kosongkan jika tidak ingin mengubah password" minlength="4">
+          <small style="color: var(--text-muted); font-size: 0.72rem;">Isi minimal 4 karakter hanya jika ingin mereset password</small>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-edit-user')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-edit-user">Simpan Perubahan User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- AUTHENTICATION GATEKEEPER OVERLAY (LOGIN & REGISTER SCREEN)    -->
+  <!-- ============================================================== -->
+  <div class="auth-overlay hidden" id="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-brand">
+          <div class="auth-logo-icon">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <path d="M18 8h1a4 4 0 0 1 0 8h-1"></path>
+              <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path>
+              <line x1="6" y1="1" x2="6" y2="4"></line>
+              <line x1="10" y1="1" x2="10" y2="4"></line>
+              <line x1="14" y1="1" x2="14" y2="4"></line>
+            </svg>
+          </div>
+          <div>
+            <h1 class="auth-title">KAFEINA ERP</h1>
+          </div>
+        </div>
+        <p class="auth-subtitle">Sistem Manajemen Terpadu Coffee Shop &amp; Roastery</p>
+
+        <!-- Auth Tabs: Login vs Register -->
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab-btn active" id="tab-btn-login" onclick="switchAuthTab('login')">
+            🔑 Masuk (Login)
+          </button>
+          <button type="button" class="auth-tab-btn" id="tab-btn-register" onclick="switchAuthTab('register')">
+            ✨ Daftar Akun Baru
+          </button>
+        </div>
+      </div>
+
+      <div class="auth-body">
+        <!-- TAB 1: FORM LOGIN -->
+        <div id="auth-section-login">
+          <!-- 4 Quick Role Access Pills -->
+          <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.04em;">
+            ⚡ Akses Cepat 1-Klik Berdasarkan Role:
+          </div>
+          <div class="auth-quick-pills">
+            <button type="button" class="auth-pill-btn" onclick="quickLogin('manager', 'manager123')">
+              <span>👑</span>
+              <div>
+                <strong style="display: block; font-size: 0.82rem;">Manager</strong>
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Semua Fitur</small>
+              </div>
+            </button>
+            <button type="button" class="auth-pill-btn" onclick="quickLogin('finance', 'finance123')">
+              <span>💰</span>
+              <div>
+                <strong style="display: block; font-size: 0.82rem;">Finance</strong>
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Keuangan &amp; CoA</small>
+              </div>
+            </button>
+            <button type="button" class="auth-pill-btn" onclick="quickLogin('hr', 'hr123')">
+              <span>👥</span>
+              <div>
+                <strong style="display: block; font-size: 0.82rem;">HR</strong>
+                <small style="color: var(--text-muted); font-size: 0.7rem;">HCM &amp; Payroll</small>
+              </div>
+            </button>
+            <button type="button" class="auth-pill-btn" onclick="quickLogin('procurement', 'procurement123')">
+              <span>📦</span>
+              <div>
+                <strong style="display: block; font-size: 0.82rem;">Procurement</strong>
+                <small style="color: var(--text-muted); font-size: 0.7rem;">Pengadaan &amp; Stok</small>
+              </div>
+            </button>
+          </div>
+
+          <div style="display: flex; align-items: center; margin: 16px 0; color: var(--text-muted); font-size: 0.78rem;">
+            <span style="flex: 1; height: 1px; background: var(--border-color);"></span>
+            <span style="padding: 0 10px; font-weight: 500;">atau masukkan akun manual</span>
+            <span style="flex: 1; height: 1px; background: var(--border-color);"></span>
+          </div>
+
+          <form id="form-auth-login" onsubmit="submitAuthLogin(event)">
+            <div class="form-group">
+              <label>Username</label>
+              <input type="text" id="auth-login-username" class="form-control" placeholder="Contoh: manager / finance" required autocomplete="username">
+            </div>
+            <div class="form-group">
+              <label>Password</label>
+              <input type="password" id="auth-login-password" class="form-control" placeholder="Masukkan password akun Anda" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-auth-login" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.95rem; margin-top: 8px;">
+              Masuk ke Sistem ERP &rarr;
+            </button>
+          </form>
+        </div>
+
+        <!-- TAB 2: FORM REGISTER -->
+        <div id="auth-section-register" style="display: none;">
+          <div style="background: rgba(36, 117, 89, 0.08); border-radius: 8px; padding: 10px 12px; margin-bottom: 16px; font-size: 0.82rem; color: var(--green-deep); line-height: 1.4;">
+            📝 <strong>Registrasi Akun Baru:</strong> Buat akun pengguna dan tentukan role hak aksesnya untuk masuk ke sistem ERP Kafeina.
+          </div>
+
+          <form id="form-auth-register" onsubmit="submitAuthRegister(event)">
+            <div class="form-group">
+              <label>Nama Lengkap *</label>
+              <input type="text" id="auth-reg-name" class="form-control" placeholder="Contoh: Maya Anggraeni" required>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Username *</label>
+                <input type="text" id="auth-reg-username" class="form-control" placeholder="Contoh: maya_procurement" required autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label>Password *</label>
+                <input type="password" id="auth-reg-password" class="form-control" placeholder="Min. 4 karakter" required minlength="4">
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Pilih Role &amp; Hak Akses Modul *</label>
+              <select id="auth-reg-role" class="form-control" required>
+                <option value="MANAGER">👑 MANAGER - Akses Seluruh Fitur ERP</option>
+                <option value="FINANCE">💰 FINANCE - Hanya Modul Finance &amp; CoA</option>
+                <option value="HR">👥 HR - Hanya Modul HCM &amp; Payroll</option>
+                <option value="PROCUREMENT">📦 PROCUREMENT - Modul Procurement &amp; Inventory Stok</option>
+              </select>
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-auth-register" style="width: 100%; justify-content: center; padding: 12px; font-size: 0.95rem; margin-top: 8px;">
+              Daftar Akun &amp; Langsung Masuk &rarr;
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- JavaScript App Logic -->
+  <script src="app.js"></script>
+</body>
+</html>

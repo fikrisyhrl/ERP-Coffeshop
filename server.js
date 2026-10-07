@@ -20,6 +20,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public'))); // Sajikan UI Frontend Dashboard Statis
+app.use(express.static(__dirname));
+
+// Sajikan index.html pada root
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 // Health Check Route
 app.get('/health', (req, res) => {
