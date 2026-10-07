@@ -16,6 +16,18 @@
 -- 1. BASE / LOOKUP TABLES
 -- ============================================================================
 
+-- Tabel Pengguna & Hak Akses (User RBAC)
+CREATE TABLE IF NOT EXISTS users (
+    id_user SERIAL PRIMARY KEY,
+    nama_lengkap VARCHAR(100) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(30) NOT NULL DEFAULT 'MANAGER' CHECK (role IN ('MANAGER', 'FINANCE', 'HR', 'PROCUREMENT')),
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Departemen dalam Coffee Shop (e.g., Bar & Floor, Kitchen, Back Office, Management)
 CREATE TABLE departments (
     id SERIAL PRIMARY KEY,
