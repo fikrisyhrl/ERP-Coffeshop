@@ -72,7 +72,16 @@ const payrollService = {
       const targetTahun = parseInt(tahun, 10);
 
       // 1. Ambil data pegawai beserta jabatan dan departemen
-      const pegawai = await Employee.findByPk(pegawai_id, {
+      const isNum = !isNaN(pegawai_id);
+      const pegawai = await Employee.findOne({
+        where: isNum
+          ? {
+              [Op.or]: [
+                { id_pegawai: parseInt(pegawai_id, 10) },
+                { kode_pegawai: String(pegawai_id) }
+              ]
+            }
+          : { kode_pegawai: String(pegawai_id) },
         include: [
           {
             model: JobPosition,

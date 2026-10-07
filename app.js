@@ -1203,8 +1203,8 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><span>${p.nama_bank || 'BCA'} • ${p.nomor_rekening || '-'}</span></td>
         <td class="text-right">
           <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
-            <button class="btn-action-po" onclick="handleKalkulasiPayroll(${p.id_pegawai})">Hitung Slip Gaji</button>
-            <button class="btn-delete-item" onclick="handleHapusPegawai(${p.id_pegawai}, '${p.nama_lengkap.replace(/'/g, "\\'")}')" title="Hapus Data Karyawan" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25); padding: 5px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; transition: all 0.2s;">
+            <button class="btn-action-po" onclick="handleKalkulasiPayroll('${p.id_pegawai || p.kode_pegawai}')">Hitung Slip Gaji</button>
+            <button class="btn-delete-item" onclick="handleHapusPegawai('${p.id_pegawai || p.kode_pegawai}', '${(p.nama_lengkap || '').replace(/'/g, "\\'")}')" title="Hapus Data Karyawan" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25); padding: 5px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; transition: all 0.2s;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -1229,18 +1229,15 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await fetch('/api/hcm/pegawai');
       const data = await res.json();
-      if (data.success && data.data?.length >= 12) {
+      if (data.success && Array.isArray(data.data)) {
         employeeList = data.data;
-      } else if (data.success && data.data?.length > 0) {
-        employeeList = data.data;
-        if (employeeList.length < 12) {
-          employeeList = default12Employees;
-        }
-      } else {
+      } else if (!employeeList || employeeList.length === 0) {
         employeeList = default12Employees;
       }
     } catch {
-      employeeList = default12Employees;
+      if (!employeeList || employeeList.length === 0) {
+        employeeList = default12Employees;
+      }
     }
 
     renderEmployeesTable(employeeList);
@@ -2697,32 +2694,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data karyawan '${namaLengkap}' dari sistem HR? Tindakan ini tidak dapat dibatalkan.`);
     if (!konfirmasi) return;
 
-    showToast(`Menghapus data karyawan '${namaLengkap}'...`, 'info');
+    // 1. Optimistic UI update: langsung hapus dari list lokal dan update tabel seketika
+    const idToFilter = String(pegawaiId);
+    employeeList = employeeList.filter(
+      (e) => String(e.id_pegawai) !== idToFilter && String(e.kode_pegawai) !== idToFilter
+    );
+    renderEmployeesTable(employeeList);
+    showToast(`Data karyawan '${namaLengkap}' telah dihapus dari antarmuka...`, 'info');
 
+    // 2. Kirim permintaan DELETE ke server database
     try {
       const res = await fetch(`/api/hcm/pegawai/${pegawaiId}`, {
         method: 'DELETE'
       });
       const data = await res.json();
-      if (!data.success) {
-        console.warn('Gagal menghapus di backend:', data.message);
+      if (data.success) {
+        showToast(`✓ Data karyawan '${namaLengkap}' berhasil dihapus permanen dari sistem HR!`, 'success');
+      } else {
+        console.warn('Gagal menghapus di database:', data.message);
+        showToast(`⚠️ Server: ${data.message || 'Gagal menghapus di database'}`, 'warning');
       }
     } catch (err) {
-      console.warn('Network error saat hapus pegawai, menghapus dari state lokal:', err);
+      console.warn('Network error saat hapus pegawai:', err);
     }
 
-    // Filter keluar dari employeeList
-    employeeList = employeeList.filter((e) => e.id_pegawai != pegawaiId && e.kode_pegawai != pegawaiId);
-
-    // Re-render tabel pegawai secara instan tanpa reload halaman
-    renderEmployeesTable(employeeList);
-
-    // Sinkronkan ke tab browser lain via real-time update
+    // 3. Sinkronkan ke tab browser lain via real-time update
     if (typeof triggerRealtimeUpdate === 'function') {
-      try { await triggerRealtimeUpdate('employee_deleted'); } catch {}
+      try { await triggerRealtimeUpdate('employee_deleted', { id_pegawai: pegawaiId, namaLengkap }); } catch {}
     }
-
-    showToast(`✓ Data karyawan '${namaLengkap}' berhasil dihapus dari sistem HR!`, 'success');
   };
 
   // Seed Demo Absensi HCM

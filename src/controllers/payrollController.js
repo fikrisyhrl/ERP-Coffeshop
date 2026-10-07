@@ -472,7 +472,7 @@ const payrollController = {
   getAllPegawai: async (req, res, next) => {
     try {
       const count = await Employee.count();
-      if (count < 12) {
+      if (count === 0) {
         await payrollController.seedDefaultEmployees();
       }
 
@@ -534,9 +534,16 @@ const payrollController = {
     try {
       const { id } = req.params;
 
-      const whereClause = isNaN(id)
-        ? { kode_pegawai: id }
-        : { id_pegawai: parseInt(id, 10) };
+      const { Op } = require('sequelize');
+      const isNum = !isNaN(id);
+      const whereClause = isNum
+        ? {
+            [Op.or]: [
+              { id_pegawai: parseInt(id, 10) },
+              { kode_pegawai: String(id) }
+            ]
+          }
+        : { kode_pegawai: String(id) };
 
       const employee = await Employee.findOne({ where: whereClause, transaction: t });
       if (!employee) {
