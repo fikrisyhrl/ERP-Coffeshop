@@ -2,9 +2,10 @@ const express = require('express');
 const router = express.Router();
 const payrollController = require('../controllers/payrollController');
 
-// GET & POST /api/hcm/payroll/pegawai & /api/hcm/pegawai
+// GET, POST, DELETE /api/hcm/payroll/pegawai & /api/hcm/pegawai
 router.get('/pegawai', payrollController.getAllPegawai);
 router.post('/pegawai', payrollController.createPegawai);
+router.delete('/pegawai/:id', payrollController.deletePegawai);
 
 // GET /api/hcm/payroll/absensi & /api/hcm/absensi
 router.get('/absensi', payrollController.getAllAbsensi);

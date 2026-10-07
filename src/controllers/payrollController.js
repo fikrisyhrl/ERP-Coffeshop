@@ -523,6 +523,52 @@ const payrollController = {
     } catch (error) {
       next(error);
     }
+  },
+
+  /**
+   * DELETE /api/hcm/pegawai/:id
+   * Menghapus data karyawan beserta data absensi & slip gaji terkait
+   */
+  deletePegawai: async (req, res, next) => {
+    const t = await sequelize.transaction();
+    try {
+      const { id } = req.params;
+
+      const whereClause = isNaN(id)
+        ? { kode_pegawai: id }
+        : { id_pegawai: parseInt(id, 10) };
+
+      const employee = await Employee.findOne({ where: whereClause, transaction: t });
+      if (!employee) {
+        await t.rollback();
+        return res.status(404).json({
+          success: false,
+          message: `Karyawan dengan ID/Kode '${id}' tidak ditemukan.`
+        });
+      }
+
+      const empId = employee.id_pegawai;
+      const empName = employee.nama_lengkap;
+      const empCode = employee.kode_pegawai;
+
+      // Hapus absensi & payroll terkait
+      await Attendance.destroy({ where: { pegawai_id: empId }, transaction: t });
+      await Payroll.destroy({ where: { pegawai_id: empId }, transaction: t });
+
+      // Hapus record karyawan
+      await employee.destroy({ transaction: t });
+
+      await t.commit();
+
+      return res.status(200).json({
+        success: true,
+        message: `Karyawan '${empName}' (${empCode}) berhasil dihapus dari sistem HR.`,
+        data: { id_pegawai: empId, kode_pegawai: empCode, nama_lengkap: empName }
+      });
+    } catch (error) {
+      if (t && !t.finished) await t.rollback();
+      next(error);
+    }
   }
 };
 

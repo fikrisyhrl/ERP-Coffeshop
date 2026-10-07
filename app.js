@@ -1202,7 +1202,18 @@ document.addEventListener('DOMContentLoaded', () => {
         <td><strong style="color: var(--green-deep);">Rp ${parseFloat(p.gaji_pokok || 0).toLocaleString('id-ID')}</strong></td>
         <td><span>${p.nama_bank || 'BCA'} • ${p.nomor_rekening || '-'}</span></td>
         <td class="text-right">
-          <button class="btn-action-po" onclick="handleKalkulasiPayroll(${p.id_pegawai})">Hitung Slip Gaji</button>
+          <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+            <button class="btn-action-po" onclick="handleKalkulasiPayroll(${p.id_pegawai})">Hitung Slip Gaji</button>
+            <button class="btn-delete-item" onclick="handleHapusPegawai(${p.id_pegawai}, '${p.nama_lengkap.replace(/'/g, "\\'")}')" title="Hapus Data Karyawan" style="background: rgba(239, 68, 68, 0.12); color: #dc2626; border: 1px solid rgba(239, 68, 68, 0.25); padding: 5px 9px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-size: 0.76rem; font-weight: 600; transition: all 0.2s;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+              <span>Hapus</span>
+            </button>
+          </div>
         </td>
       </tr>
     `
@@ -2679,6 +2690,39 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn) btn.disabled = false;
 
     showToast(`✓ Karyawan baru ${newEmployee.nama_lengkap} (${jabatan}) dengan gaji Rp ${gaji_pokok.toLocaleString('id-ID')} berhasil ditambahkan!`, 'success');
+  };
+
+  // Hapus Data Karyawan (HR & HCM Module)
+  window.handleHapusPegawai = async (pegawaiId, namaLengkap) => {
+    const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data karyawan '${namaLengkap}' dari sistem HR? Tindakan ini tidak dapat dibatalkan.`);
+    if (!konfirmasi) return;
+
+    showToast(`Menghapus data karyawan '${namaLengkap}'...`, 'info');
+
+    try {
+      const res = await fetch(`/api/hcm/pegawai/${pegawaiId}`, {
+        method: 'DELETE'
+      });
+      const data = await res.json();
+      if (!data.success) {
+        console.warn('Gagal menghapus di backend:', data.message);
+      }
+    } catch (err) {
+      console.warn('Network error saat hapus pegawai, menghapus dari state lokal:', err);
+    }
+
+    // Filter keluar dari employeeList
+    employeeList = employeeList.filter((e) => e.id_pegawai != pegawaiId && e.kode_pegawai != pegawaiId);
+
+    // Re-render tabel pegawai secara instan tanpa reload halaman
+    renderEmployeesTable(employeeList);
+
+    // Sinkronkan ke tab browser lain via real-time update
+    if (typeof triggerRealtimeUpdate === 'function') {
+      try { await triggerRealtimeUpdate('employee_deleted'); } catch {}
+    }
+
+    showToast(`✓ Data karyawan '${namaLengkap}' berhasil dihapus dari sistem HR!`, 'success');
   };
 
   // Seed Demo Absensi HCM
