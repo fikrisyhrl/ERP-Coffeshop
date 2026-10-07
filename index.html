@@ -651,7 +651,10 @@
               <button class="sub-tab" onclick="switchHcmTab('absensi')">📋 Rekap Absensi (24 Hari)</button>
               <button class="sub-tab" onclick="switchHcmTab('slip')">🧾 Generator Slip Gaji (Payslip)</button>
             </div>
-            <div class="tab-actions">
+            <div class="tab-actions" style="display: flex; gap: 8px;">
+              <button class="btn btn-primary btn-sm" onclick="openModal('modal-create-employee')" id="btn-add-emp-tab" style="display: flex; align-items: center; gap: 6px;">
+                <span>+ Tambah Karyawan</span>
+              </button>
               <button class="btn btn-secondary btn-sm" onclick="handleSeedDemoHCM()">🔄 Buat Demo Absensi</button>
             </div>
           </div>
@@ -659,11 +662,20 @@
           <!-- Sub Panel 1: Data Pegawai -->
           <div class="sub-panel" id="panel-hcm-pegawai">
             <div class="table-section">
-              <div class="table-header">
+              <div class="table-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
                 <div class="table-title-group">
                   <div class="table-badge">HUMAN CAPITAL</div>
                   <h3 class="table-title">Daftar Karyawan Coffee Shop</h3>
-                  <p class="table-subtitle">Manajemen profil pegawai, jabatan, departemen, dan gaji pokok.</p>
+                  <p class="table-subtitle">Manajemen profil pegawai, jabatan, departemen, dan gaji pokok secara real-time.</p>
+                </div>
+                <div class="table-actions">
+                  <button class="btn btn-primary" onclick="openModal('modal-create-employee')" id="btn-open-create-employee" style="display: flex; align-items: center; gap: 8px;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span>+ Tambah Karyawan Baru</span>
+                  </button>
                 </div>
               </div>
               <div class="table-responsive">
@@ -1626,6 +1638,87 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-terima-barang-qc')">Batal</button>
           <button type="submit" class="btn btn-primary" style="background: var(--green-deep);">✓ Simpan Penerimaan &amp; Terbitkan Invoice Tagihan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Karyawan Baru (HR & HCM) -->
+  <div class="modal-backdrop" id="modal-create-employee">
+    <div class="modal-box" style="max-width: 550px;">
+      <div class="modal-header">
+        <h3>👥 Tambah Karyawan Baru (HR Module)</h3>
+        <button class="modal-close" onclick="closeModal('modal-create-employee')">&times;</button>
+      </div>
+      <form id="form-create-employee" onsubmit="submitCreateEmployee(event)">
+        <div class="form-group">
+          <label>Nama Lengkap Karyawan *</label>
+          <input type="text" id="emp-nama-input" class="form-control" placeholder="Contoh: Sarah Nabila" required>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Jabatan / Posisi *</label>
+            <input type="text" list="list-jabatan" id="emp-jabatan-input" class="form-control" placeholder="Pilih / ketik jabatan..." required>
+            <datalist id="list-jabatan">
+              <option value="Head Barista & QC"></option>
+              <option value="Senior Barista & Latte Artist"></option>
+              <option value="Junior Barista"></option>
+              <option value="Head Cashier & POS"></option>
+              <option value="Master Coffee Roaster"></option>
+              <option value="Kitchen Head Cook"></option>
+              <option value="Pastry & Bakery Chef"></option>
+              <option value="Inventory & Warehouse Officer"></option>
+              <option value="Finance & Cashier Supervisor"></option>
+              <option value="HR & People Operations"></option>
+              <option value="General Utility & Dishwasher"></option>
+              <option value="Store Manager & Owner"></option>
+            </datalist>
+          </div>
+          <div class="form-group">
+            <label>Departemen *</label>
+            <select id="emp-dept-input" class="form-control" required>
+              <option value="Bar & Floor">Bar & Floor</option>
+              <option value="Roastery">Roastery</option>
+              <option value="Kitchen & Food">Kitchen & Food</option>
+              <option value="Supply & Warehouse">Supply & Warehouse</option>
+              <option value="Back Office">Back Office</option>
+              <option value="Management">Management</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nominal Gaji Pokok (Rp) *</label>
+            <input type="number" id="emp-gaji-input" class="form-control" placeholder="Contoh: 4500000" min="1000000" step="50000" required>
+          </div>
+          <div class="form-group">
+            <label>Status Kerja *</label>
+            <select id="emp-status-input" class="form-control" required>
+              <option value="FULL_TIME">Full Time (Tetap)</option>
+              <option value="PROBATION">Probation (Percobaan)</option>
+              <option value="CONTRACT">Contract (Kontrak)</option>
+              <option value="PART_TIME">Part Time</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>No. Telepon / WhatsApp</label>
+            <input type="text" id="emp-telepon-input" class="form-control" placeholder="Contoh: 0812-3456-7890">
+          </div>
+          <div class="form-group">
+            <label>Rekening Bank Transfer</label>
+            <input type="text" id="emp-rekening-input" class="form-control" placeholder="Contoh: BCA 5270123456">
+          </div>
+        </div>
+
+        <div class="modal-footer" style="margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px;">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-create-employee')">Batal</button>
+          <button type="submit" class="btn btn-primary" id="btn-submit-employee">💾 Simpan Data Karyawan</button>
         </div>
       </form>
     </div>
