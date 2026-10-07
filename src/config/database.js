@@ -90,6 +90,13 @@ const testConnection = async () => {
   } catch (error) {
     const dbType = isPostgres ? 'PostgreSQL (Supabase)' : 'MySQL';
     console.error(`✗ Gagal menghubungkan ke database ${dbType}:`, error.message);
+    if (!isPostgres) {
+      console.log('----------------------------------------------------');
+      console.log('💡 CARA MENGATASI DATABASE TIDAK AKTIF:');
+      console.log('👉 Pilihan A (MySQL Lokal): Buka XAMPP Control Panel, klik START pada MySQL, dan buat database "erp_coffeeshop".');
+      console.log('👉 Pilihan B (Supabase Cloud): Isi DATABASE_URL di file .env dengan URI connection string Supabase Anda.');
+      console.log('----------------------------------------------------\n');
+    }
   }
 };
 
