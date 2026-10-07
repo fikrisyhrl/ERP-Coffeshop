@@ -10,6 +10,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==============================================================
   let currentModule = 'dashboard';
   let inventoryItems = [];
+  try {
+    const cachedInv = localStorage.getItem('kafeina_erp_inventory');
+    if (cachedInv) inventoryItems = JSON.parse(cachedInv);
+  } catch {}
   let filteredInventory = [];
   let journalEntries = [];
   let chartOfAccounts = [];
@@ -20,7 +24,15 @@ document.addEventListener('DOMContentLoaded', () => {
   } catch {}
   let attendanceLogs = [];
   let purchaseOrders = [];
+  try {
+    const cachedPo = localStorage.getItem('kafeina_erp_purchase_orders');
+    if (cachedPo) purchaseOrders = JSON.parse(cachedPo);
+  } catch {}
   let supplierList = [];
+  try {
+    const cachedSup = localStorage.getItem('kafeina_erp_suppliers');
+    if (cachedSup) supplierList = JSON.parse(cachedSup);
+  } catch {}
   let stockMutations = [];
   let systemUsers = [];
   let purchaseInvoices = [];
@@ -597,6 +609,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataPo = await resPo.json();
       if (dataPo.success && dataPo.data?.length > 0) {
         purchaseOrders = dataPo.data;
+        try {
+          localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
+        } catch {}
       } else if (purchaseOrders.length === 0) {
         purchaseOrders = [...defaultMockPurchaseOrders];
       }
@@ -1305,6 +1320,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataPo = await resPo.json();
       if (dataPo.success && dataPo.data?.length > 0) {
         purchaseOrders = dataPo.data;
+        try {
+          localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
+        } catch {}
       } else if (purchaseOrders.length === 0) {
         purchaseOrders = [...defaultMockPurchaseOrders];
       }
@@ -1384,6 +1402,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const dataSup = await resSup.json();
       if (dataSup.success && dataSup.data?.length > 0) {
         supplierList = dataSup.data;
+        try {
+          localStorage.setItem('kafeina_erp_suppliers', JSON.stringify(supplierList));
+        } catch {}
       } else {
         supplierList = [...defaultMockSuppliers];
       }
@@ -1422,21 +1443,29 @@ document.addEventListener('DOMContentLoaded', () => {
           stok_saat_ini: parseFloat(item.stok_saat_ini || 0),
           batas_safety_stock: parseFloat(item.batas_safety_stock || 0),
           harga_satuan: parseFloat(item.harga_satuan || 0),
+          supplier_id: item.supplier_id,
           quality_grade: item.quality_grade || 'GRADE_A',
           stok_reject: parseFloat(item.stok_reject || 0)
         }));
 
-        if (inventoryItems.length < 4) {
-          const names = new Set(inventoryItems.map((i) => i.nama_barang));
-          defaultMockItems.forEach((m) => {
-            if (!names.has(m.nama_barang)) inventoryItems.push(m);
-          });
-        }
+        try {
+          localStorage.setItem('kafeina_erp_inventory', JSON.stringify(inventoryItems));
+        } catch {}
       } else {
-        inventoryItems = [...defaultMockItems];
+        const cached = localStorage.getItem('kafeina_erp_inventory');
+        if (cached) {
+          inventoryItems = JSON.parse(cached);
+        } else if (inventoryItems.length === 0) {
+          inventoryItems = [...defaultMockItems];
+        }
       }
     } catch {
-      inventoryItems = [...defaultMockItems];
+      const cached = localStorage.getItem('kafeina_erp_inventory');
+      if (cached) {
+        inventoryItems = JSON.parse(cached);
+      } else if (inventoryItems.length === 0) {
+        inventoryItems = [...defaultMockItems];
+      }
     }
 
     applyInventoryFilter();
@@ -1716,6 +1745,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         purchaseOrders.unshift(payload);
       }
+      try {
+        localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
+      } catch {}
     } else if (payload && (reason === 'finance_approve' || reason === 'finance_reject')) {
       const target = purchaseOrders.find((p) => p.id_po == (payload.id_po || payload.poId));
       if (target) {
@@ -1723,6 +1755,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (payload.disetujui_oleh) target.disetujui_oleh = payload.disetujui_oleh;
         if (payload.catatan_finance) target.catatan_finance = payload.catatan_finance;
       }
+      try {
+        localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
+      } catch {}
     }
 
     // 2. Broadcast ke seluruh tab / jendela lain secara instan via BroadcastChannel
@@ -1752,8 +1787,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 5. Segarkan modul lain yang terpengaruh di latar belakang
     if (['create_po', 'ajukan_finance', 'finance_approve', 'finance_reject'].includes(reason)) {
+      loadFinanceData();
       if (currentModule !== 'procurement') loadProcurementData();
-      if (currentModule !== 'finance') loadFinanceData();
       if (currentModule !== 'dashboard') loadDashboardData();
     }
     if (reason === 'terima_barang') {
@@ -1924,6 +1959,24 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  window.onPoBarangChange = () => {
+    const itemSelect = document.getElementById('po-barang-select');
+    const hargaInput = document.getElementById('po-harga-input');
+    const supSelect = document.getElementById('po-supplier-select');
+    if (!itemSelect) return;
+
+    const selectedId = itemSelect.value;
+    const item = inventoryItems.find((i) => String(i.id_barang) === String(selectedId));
+    if (item) {
+      if (hargaInput && (!hargaInput.value || parseFloat(hargaInput.value) <= 0)) {
+        hargaInput.value = item.harga_satuan || '';
+      }
+      if (supSelect && item.supplier_id) {
+        supSelect.value = item.supplier_id;
+      }
+    }
+  };
+
   const populateMutasiDropdown = () => {
     const select = document.getElementById('mut-barang-select');
     if (!select || !inventoryItems || inventoryItems.length === 0) return;
@@ -2057,6 +2110,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (newBarang) {
       inventoryItems.unshift(newBarang);
+      try {
+        localStorage.setItem('kafeina_erp_inventory', JSON.stringify(inventoryItems));
+      } catch {}
       populatePoModalDropdowns();
       populateMutasiDropdown();
 
@@ -2075,6 +2131,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (m) m.classList.add('active');
     if (modalId === 'modal-po') {
       populatePoModalDropdowns();
+      if (typeof window.onPoBarangChange === 'function') {
+        window.onPoBarangChange();
+      }
     } else if (modalId === 'modal-mutasi') {
       populateMutasiDropdown();
     } else if (modalId === 'modal-tambah-barang') {
@@ -2092,14 +2151,18 @@ document.addEventListener('DOMContentLoaded', () => {
     showToast(`Mengajukan Pembelian ke Finance untuk ${namaBarang} (+${jumlahPesan.toLocaleString('id-ID')} ${satuan})...`, 'info');
     let createdPo = null;
 
+    const targetItem = inventoryItems.find((i) => String(i.id_barang) === String(idBarang));
+    const targetSupplierId = targetItem?.supplier_id || 1;
+    const targetHarga = targetItem?.harga_satuan || 300;
+
     try {
       const response = await fetch('/api/procurement/po', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          supplier_id: 1,
+          supplier_id: targetSupplierId,
           catatan: `Reorder otomatis dari Safety Stock Alert: ${namaBarang}`,
-          items: [{ id_barang: idBarang, jumlah_pesan: jumlahPesan, harga_satuan_estimasi: 300 }]
+          items: [{ id_barang: idBarang, jumlah_pesan: jumlahPesan, harga_satuan_estimasi: targetHarga }]
         })
       });
       const data = await response.json();
@@ -2111,18 +2174,19 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch {
       // Offline fallback
+      const sup = supplierList.find((s) => s.id_supplier == targetSupplierId) || { id_supplier: targetSupplierId, nama_supplier: 'CV Nusantara Coffee Roastery', telepon: '0812-3456-7890' };
       const newId = Date.now();
       createdPo = {
         id_po: newId,
         nomor_po: `PO-AUTO-${Date.now().toString().slice(-6)}`,
-        supplier_id: 1,
+        supplier_id: targetSupplierId,
         tanggal_po: new Date().toISOString().split('T')[0],
         status: 'PENDING_APPROVAL',
-        total_estimasi: jumlahPesan * 300,
+        total_estimasi: jumlahPesan * targetHarga,
         is_auto_generated: true,
         catatan: `Reorder otomatis dari Safety Stock Alert: ${namaBarang}. Menunggu persetujuan Finance.`,
-        supplier: { id_supplier: 1, nama_supplier: 'CV Nusantara Coffee Roastery', telepon: '0812-3456-7890' },
-        items: [{ id_barang: idBarang, jumlah_pesan: jumlahPesan, harga_satuan_estimasi: 300, barang: { id_barang: idBarang, nama_barang: namaBarang, satuan } }]
+        supplier: sup,
+        items: [{ id_barang: idBarang, jumlah_pesan: jumlahPesan, harga_satuan_estimasi: targetHarga, barang: { id_barang: idBarang, nama_barang: namaBarang, satuan } }]
       };
       showToast(`✓ Permintaan pembelian untuk ${namaBarang} masuk ke Modul Finance (Menunggu Persetujuan)!`, 'success');
     }
@@ -2134,6 +2198,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         purchaseOrders.unshift(createdPo);
       }
+      try {
+        localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
+      } catch {}
     }
 
     await triggerRealtimeUpdate('create_po', createdPo);
@@ -2197,6 +2264,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         purchaseOrders.unshift(createdPo);
       }
+      try {
+        localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
+      } catch {}
     }
 
     await triggerRealtimeUpdate('create_po', createdPo);
@@ -2491,8 +2561,15 @@ document.addEventListener('DOMContentLoaded', () => {
         item.quality_grade = quality_grade;
         if (jumlah_reject_qc > 0) item.stok_reject = (parseFloat(item.stok_reject) || 0) + jumlah_reject_qc;
       }
+      try {
+        localStorage.setItem('kafeina_erp_inventory', JSON.stringify(inventoryItems));
+      } catch {}
       showToast(`✓ Penerimaan Quality Stock tercatat (${quality_grade})! Invoice tagihan terbit ke Finance.`, 'success');
     }
+
+    try {
+      localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
+    } catch {}
 
     await triggerRealtimeUpdate('terima_barang');
   };
@@ -2582,6 +2659,10 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('✓ Pemakaian stok berhasil dicatat!', 'success');
       }
     }
+
+    try {
+      localStorage.setItem('kafeina_erp_inventory', JSON.stringify(inventoryItems));
+    } catch {}
 
     await triggerRealtimeUpdate('catat_pemakaian');
   };
