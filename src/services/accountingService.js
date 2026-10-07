@@ -142,9 +142,8 @@ const accountingService = {
     const t = await sequelize.transaction();
 
     try {
-      // 1. Ambil data slip gaji
+      // 1. Ambil data slip gaji (Kunci baris payroll tanpa join)
       const payroll = await Payroll.findByPk(payroll_id, {
-        include: [{ model: Employee, as: 'pegawai' }],
         transaction: t,
         lock: t.LOCK.UPDATE
       });
@@ -152,6 +151,9 @@ const accountingService = {
       if (!payroll) {
         throw new Error(`Data Payroll ID ${payroll_id} tidak ditemukan`);
       }
+
+      const pegawai = await Employee.findByPk(payroll.pegawai_id, { transaction: t });
+      payroll.pegawai = pegawai;
 
       if (payroll.status_pembayaran === 'PAID') {
         throw new Error(`Slip gaji #${payroll.nomor_slip} sudah pernah dibayarkan sebelumnya (PAID).`);

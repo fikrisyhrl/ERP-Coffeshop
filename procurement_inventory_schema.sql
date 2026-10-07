@@ -144,6 +144,7 @@ CREATE TABLE goods_receipt_items (
     quality_grade VARCHAR(30) NOT NULL DEFAULT 'GRADE_A',
     jumlah_lolos_qc DECIMAL(12, 3) NOT NULL DEFAULT 0.000,
     jumlah_reject_qc DECIMAL(12, 3) NOT NULL DEFAULT 0.000,
+    catatan_qc TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

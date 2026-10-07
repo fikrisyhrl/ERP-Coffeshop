@@ -127,9 +127,8 @@ const procurementService = {
     const t = await sequelize.transaction();
 
     try {
-      // 1. Validasi PO
+      // 1. Validasi PO (Kunci baris PO tanpa join agar kompatibel PostgreSQL FOR UPDATE)
       const po = await PurchaseOrder.findByPk(po_id, {
-        include: [{ model: PurchaseOrderItem, as: 'items' }],
         transaction: t,
         lock: t.LOCK.UPDATE
       });
@@ -201,14 +200,29 @@ const procurementService = {
           throw new Error(`Harga beli satuan untuk item ID ${id_barang} tidak valid`);
         }
 
-        // Cari item baris pada PO
-        const poItem = await PurchaseOrderItem.findOne({
-          where: { id_po_item: po_item_id, po_id: po.id_po },
-          transaction: t
-        });
+        // Cari item baris pada PO dengan fallback fleksibel
+        let poItem = null;
+        if (po_item_id) {
+          poItem = await PurchaseOrderItem.findOne({
+            where: { id_po_item: po_item_id, po_id: po.id_po },
+            transaction: t
+          });
+        }
+        if (!poItem && id_barang) {
+          poItem = await PurchaseOrderItem.findOne({
+            where: { po_id: po.id_po, id_barang },
+            transaction: t
+          });
+        }
+        if (!poItem) {
+          poItem = await PurchaseOrderItem.findOne({
+            where: { po_id: po.id_po },
+            transaction: t
+          });
+        }
 
         if (!poItem) {
-          throw new Error(`Item PO ID ${po_item_id} tidak terdaftar pada PO #${po.nomor_po}`);
+          throw new Error(`Item barang ID ${id_barang} tidak terdaftar pada PO #${po.nomor_po}`);
         }
 
         // Kunci baris master barang untuk kalkulasi atomik
@@ -342,6 +356,51 @@ const procurementService = {
             },
             { transaction: t }
           );
+
+          // Otomatis catat Jurnal Akrual Pembelian di Buku Jurnal Finance
+          // Debet: Persediaan Bahan Baku (Akun 3 / 1-1030)
+          // Kredit: Hutang Usaha / Supplier (Akun 4 / 2-1001)
+          const { JournalEntry, JournalEntryLine } = require('../models');
+          const nominalTagihan = parseFloat(po.total_estimasi || 0);
+
+          if (nominalTagihan > 0) {
+            const nomorJurnal = `JV-GRN-${Date.now().toString().slice(-6)}`;
+            const jEntry = await JournalEntry.create(
+              {
+                nomor_jurnal: nomorJurnal,
+                tanggal_jurnal: new Date(),
+                tipe_referensi: 'PURCHASE_RECEIPT',
+                referensi_id: createdInvoice.id_invoice,
+                keterangan: `Penerimaan Barang PO #${po.nomor_po} & Pengakuan Faktur #${createdInvoice.nomor_invoice}`,
+                total_debet: nominalTagihan,
+                total_kredit: nominalTagihan,
+                status: 'POSTED'
+              },
+              { transaction: t }
+            );
+
+            await JournalEntryLine.create(
+              {
+                jurnal_id: jEntry.id_jurnal,
+                akun_id: 3, // 1-1030 Persediaan Bahan Baku
+                debet: nominalTagihan,
+                kredit: 0.00,
+                catatan: `Penambahan fisik persediaan bahan baku PO #${po.nomor_po}`
+              },
+              { transaction: t }
+            );
+
+            await JournalEntryLine.create(
+              {
+                jurnal_id: jEntry.id_jurnal,
+                akun_id: 4, // 2-1001 Hutang Usaha / Supplier
+                debet: 0.00,
+                kredit: nominalTagihan,
+                catatan: `Hutang dagang pembelian barang PO #${po.nomor_po}`
+              },
+              { transaction: t }
+            );
+          }
         } else {
           createdInvoice = existingInv;
         }

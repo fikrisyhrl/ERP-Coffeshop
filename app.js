@@ -36,6 +36,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let stockMutations = [];
   let systemUsers = [];
   let purchaseInvoices = [];
+  try {
+    const cachedInv = localStorage.getItem('kafeina_erp_invoices');
+    if (cachedInv) purchaseInvoices = JSON.parse(cachedInv);
+  } catch {}
   let cashBalanceData = { kas_toko: 0, bank_bca: 0, total_uang_tersedia: 0 };
 
   // User State & RBAC Permissions
@@ -789,6 +793,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         purchaseInvoices = data.data;
+        try {
+          localStorage.setItem('kafeina_erp_invoices', JSON.stringify(purchaseInvoices));
+        } catch {}
       }
     } catch (err) {
       console.warn('Invoices fetch error:', err);
@@ -933,7 +940,17 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`✓ Invoice #${data.data?.invoice?.nomor_invoice || idInvoice} berhasil DIBAYAR LUNAS! Kas & Jurnal terupdate otomatis.`, 'success');
+        showToast(`✓ Invoice #${data.data?.nomor_invoice || idInvoice} berhasil DIBAYAR LUNAS! Kas & Jurnal terupdate otomatis.`, 'success');
+        const targetInv = purchaseInvoices.find((i) => i.id_invoice === idInvoice);
+        if (targetInv) {
+          targetInv.status_pembayaran = 'PAID';
+          targetInv.metode_pembayaran = metode_pembayaran;
+          targetInv.tanggal_bayar = new Date().toISOString();
+          targetInv.dibayar_oleh = dibayar_oleh;
+        }
+        try {
+          localStorage.setItem('kafeina_erp_invoices', JSON.stringify(purchaseInvoices));
+        } catch {}
       } else {
         throw new Error(data.message);
       }
@@ -946,6 +963,9 @@ document.addEventListener('DOMContentLoaded', () => {
         targetInv.tanggal_bayar = new Date().toISOString();
         targetInv.dibayar_oleh = dibayar_oleh;
       }
+      try {
+        localStorage.setItem('kafeina_erp_invoices', JSON.stringify(purchaseInvoices));
+      } catch {}
       showToast(`✓ Invoice #${targetInv?.nomor_invoice || idInvoice} DIBAYAR LUNAS (Mode Lokal)!`, 'success');
     }
 
@@ -1792,9 +1812,9 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentModule !== 'dashboard') loadDashboardData();
     }
     if (reason === 'terima_barang') {
+      loadFinanceData();
       if (currentModule !== 'inventory') loadInventoryData();
       if (currentModule !== 'procurement') loadProcurementData();
-      if (currentModule !== 'finance') loadFinanceData();
       if (currentModule !== 'dashboard') loadDashboardData();
     }
     if (['create_mutasi', 'catat_pemakaian'].includes(reason)) {
@@ -1880,6 +1900,17 @@ document.addEventListener('DOMContentLoaded', () => {
         showToast('💰 Saldo dana kas/bank diperbarui secara realtime.', 'info');
       }
     } else if (reason === 'terima_barang') {
+      if (payload && payload.invoice) {
+        const existIdx = purchaseInvoices.findIndex((inv) => inv.id_invoice == payload.invoice.id_invoice);
+        if (existIdx >= 0) {
+          purchaseInvoices[existIdx] = { ...purchaseInvoices[existIdx], ...payload.invoice };
+        } else {
+          purchaseInvoices.unshift(payload.invoice);
+        }
+        try {
+          localStorage.setItem('kafeina_erp_invoices', JSON.stringify(purchaseInvoices));
+        } catch {}
+      }
       if (
         currentUser &&
         (currentUser.role === 'FINANCE' ||
@@ -2517,6 +2548,11 @@ document.addEventListener('DOMContentLoaded', () => {
     closeModal('modal-terima-barang-qc');
     showToast('Memverifikasi Quality Stock & Menerbitkan Invoice Tagihan Finance...', 'info');
 
+    let receivedResult = null;
+    const targetPo = purchaseOrders.find((p) => p.id_po == poId);
+    const targetPoItem = targetPo?.items?.find((it) => it.id_barang == barangId) || targetPo?.items?.[0];
+    const poItemId = targetPoItem?.id_po_item || null;
+
     try {
       const res = await fetch('/api/procurement/terima-barang', {
         method: 'POST',
@@ -2528,7 +2564,7 @@ document.addEventListener('DOMContentLoaded', () => {
           catatan: catatan_qc,
           items: [
             {
-              po_item_id: 1,
+              po_item_id: poItemId,
               id_barang: barangId,
               jumlah_diterima: jumlah_total,
               jumlah_lolos_qc,
@@ -2544,15 +2580,28 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const data = await res.json();
       if (data.success) {
+        receivedResult = data.data;
         showToast(
           `✓ Penerimaan Quality Stock Lolos (${quality_grade})! ${jumlah_lolos_qc} unit masuk gudang, Invoice Tagihan terbit untuk Finance.`,
           'success'
         );
+        if (data.data?.invoice) {
+          const invData = data.data.invoice;
+          const existIdx = purchaseInvoices.findIndex((inv) => inv.id_invoice == invData.id_invoice);
+          if (existIdx >= 0) {
+            purchaseInvoices[existIdx] = { ...purchaseInvoices[existIdx], ...invData };
+          } else {
+            purchaseInvoices.unshift(invData);
+          }
+          try {
+            localStorage.setItem('kafeina_erp_invoices', JSON.stringify(purchaseInvoices));
+          } catch {}
+        }
       } else {
         throw new Error(data.message);
       }
     } catch (err) {
-      // Fallback lokal
+      // Fallback lokal jika offline
       const po = purchaseOrders.find((p) => p.id_po === poId);
       if (po) po.status = 'COMPLETED';
       const item = inventoryItems.find((i) => i.id_barang === barangId);
@@ -2564,6 +2613,26 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         localStorage.setItem('kafeina_erp_inventory', JSON.stringify(inventoryItems));
       } catch {}
+
+      const newInvId = Date.now();
+      const offlineInv = {
+        id_invoice: newInvId,
+        nomor_invoice: `INV-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+        po_id: poId,
+        supplier_id: po?.supplier_id || 1,
+        tanggal_invoice: new Date().toISOString().split('T')[0],
+        tanggal_jatuh_tempo: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+        total_tagihan: po?.total_estimasi || (jumlah_total * harga),
+        status_pembayaran: 'UNPAID',
+        catatan: `Invoice Tagihan Pembelian Barang PO #${po?.nomor_po || poId}`,
+        purchase_order: po,
+        supplier: po?.supplier
+      };
+      purchaseInvoices.unshift(offlineInv);
+      try {
+        localStorage.setItem('kafeina_erp_invoices', JSON.stringify(purchaseInvoices));
+      } catch {}
+
       showToast(`✓ Penerimaan Quality Stock tercatat (${quality_grade})! Invoice tagihan terbit ke Finance.`, 'success');
     }
 
@@ -2571,7 +2640,7 @@ document.addEventListener('DOMContentLoaded', () => {
       localStorage.setItem('kafeina_erp_purchase_orders', JSON.stringify(purchaseOrders));
     } catch {}
 
-    await triggerRealtimeUpdate('terima_barang');
+    await triggerRealtimeUpdate('terima_barang', { po_id: poId, invoice: receivedResult?.invoice });
   };
 
   // Submit Modal Jurnal Manual
