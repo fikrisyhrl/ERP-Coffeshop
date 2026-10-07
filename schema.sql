@@ -29,21 +29,22 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Departemen dalam Coffee Shop (e.g., Bar & Floor, Kitchen, Back Office, Management)
-CREATE TABLE departments (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL UNIQUE,
-    description TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS departments (
+    id_departemen SERIAL PRIMARY KEY,
+    nama_departemen VARCHAR(100) NOT NULL UNIQUE,
+    deskripsi TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Posisi / Jabatan (e.g., Head Barista, Junior Barista, Cashier, Store Manager)
-CREATE TABLE job_positions (
-    id SERIAL PRIMARY KEY,
-    department_id INT NOT NULL REFERENCES departments(id) ON DELETE RESTRICT,
-    title VARCHAR(100) NOT NULL,
-    base_salary_min DECIMAL(15, 2) DEFAULT 0.00,
-    base_salary_max DECIMAL(15, 2) DEFAULT 0.00,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS job_positions (
+    id_posisi SERIAL PRIMARY KEY,
+    departemen_id INT NOT NULL REFERENCES departments(id_departemen) ON DELETE CASCADE,
+    nama_jabatan VARCHAR(100) NOT NULL,
+    gaji_pokok_standar DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Kategori Bahan Baku / Barang (e.g., Beans, Dairy, Syrups, Bakery, Packaging)
@@ -98,47 +99,43 @@ CREATE INDEX idx_coa_type ON chart_of_accounts(account_type);
 -- ============================================================================
 
 -- Data Master Pegawai
-CREATE TABLE employees (
-    id SERIAL PRIMARY KEY,
-    employee_code VARCHAR(30) NOT NULL UNIQUE,
-    full_name VARCHAR(150) NOT NULL,
-    id_card_number VARCHAR(50), -- NIK KTP
-    gender VARCHAR(10) CHECK (gender IN ('MALE', 'FEMALE')),
-    phone VARCHAR(25),
-    email VARCHAR(100) UNIQUE,
-    address TEXT,
-    hire_date DATE NOT NULL,
-    employment_status VARCHAR(30) NOT NULL DEFAULT 'PROBATION' 
-        CHECK (employment_status IN ('FULL_TIME', 'PART_TIME', 'PROBATION', 'CONTRACT', 'RESIGNED')),
-    position_id INT NOT NULL REFERENCES job_positions(id) ON DELETE RESTRICT,
-    base_salary DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
-    bank_name VARCHAR(50),
-    bank_account_number VARCHAR(50),
+CREATE TABLE IF NOT EXISTS employees (
+    id_pegawai SERIAL PRIMARY KEY,
+    kode_pegawai VARCHAR(30) NOT NULL UNIQUE,
+    nama_lengkap VARCHAR(150) NOT NULL,
+    email VARCHAR(100),
+    telepon VARCHAR(30),
+    posisi_id INT NOT NULL REFERENCES job_positions(id_posisi) ON DELETE RESTRICT,
+    status_kerja VARCHAR(30) NOT NULL DEFAULT 'FULL_TIME',
+    gaji_pokok DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    nama_bank VARCHAR(50) DEFAULT 'BCA',
+    nomor_rekening VARCHAR(50),
+    tanggal_masuk DATE DEFAULT CURRENT_DATE,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_emp_code ON employees(employee_code);
+CREATE INDEX idx_emp_kode_pegawai ON employees(kode_pegawai);
 
 -- Catatan Kehadiran & Shift (Absensi)
-CREATE TABLE attendances (
-    id BIGSERIAL PRIMARY KEY,
-    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    attendance_date DATE NOT NULL,
-    shift_name VARCHAR(50) NOT NULL, -- e.g., 'Opening (07:00 - 15:00)', 'Closing (15:00 - 23:00)'
-    check_in TIMESTAMP WITH TIME ZONE,
-    check_out TIMESTAMP WITH TIME ZONE,
-    attendance_status VARCHAR(20) NOT NULL DEFAULT 'PRESENT'
-        CHECK (attendance_status IN ('PRESENT', 'LATE', 'ABSENT', 'SICK', 'ON_LEAVE')),
-    late_minutes INT DEFAULT 0,
-    overtime_hours DECIMAL(4, 2) DEFAULT 0.00,
-    notes TEXT,
+CREATE TABLE IF NOT EXISTS attendances (
+    id_absensi BIGSERIAL PRIMARY KEY,
+    pegawai_id INT NOT NULL REFERENCES employees(id_pegawai) ON DELETE CASCADE,
+    tanggal_absensi DATE NOT NULL,
+    nama_shift VARCHAR(50) DEFAULT 'Shift Normal',
+    jam_masuk TIMESTAMP WITH TIME ZONE,
+    jam_keluar TIMESTAMP WITH TIME ZONE,
+    status_kehadiran VARCHAR(30) NOT NULL DEFAULT 'HADIR',
+    menit_terlambat INT NOT NULL DEFAULT 0,
+    jam_lembur DECIMAL(4, 2) NOT NULL DEFAULT 0.00,
+    catatan TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uq_employee_date UNIQUE (employee_id, attendance_date)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_attendance_date ON attendances(attendance_date);
+CREATE INDEX idx_att_pegawai ON attendances(pegawai_id);
+CREATE INDEX idx_att_tanggal ON attendances(tanggal_absensi);
 
 -- Komponen Gaji (Master Tunjangan & Potongan)
 CREATE TABLE salary_components (
@@ -164,7 +161,7 @@ CREATE TABLE journal_entries (
     reference_id BIGINT,                -- Relasi polimorfik ke ID sumber transaksi
     description TEXT NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (status IN ('DRAFT', 'POSTED', 'CANCELLED')),
-    created_by INT REFERENCES employees(id) ON DELETE SET NULL,
+    created_by INT REFERENCES employees(id_pegawai) ON DELETE SET NULL,
     posted_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -199,7 +196,7 @@ CREATE TABLE cash_transactions (
     recipient_or_payer VARCHAR(150),
     notes TEXT,
     journal_entry_id BIGINT REFERENCES journal_entries(id) ON DELETE SET NULL,
-    created_by INT REFERENCES employees(id) ON DELETE SET NULL,
+    created_by INT REFERENCES employees(id_pegawai) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -239,36 +236,48 @@ CREATE TABLE fixed_asset_depreciations (
 -- ============================================================================
 
 -- Header Penggajian Karyawan (Payroll Slip)
-CREATE TABLE payrolls (
-    id BIGSERIAL PRIMARY KEY,
-    payroll_number VARCHAR(50) NOT NULL UNIQUE,
-    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE RESTRICT,
-    period_start DATE NOT NULL,
-    period_end DATE NOT NULL,
-    gross_earnings DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
-    total_deductions DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
-    net_salary DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
-    payment_status VARCHAR(20) NOT NULL DEFAULT 'DRAFT' CHECK (payment_status IN ('DRAFT', 'APPROVED', 'PAID')),
-    journal_entry_id BIGINT REFERENCES journal_entries(id) ON DELETE SET NULL,
-    paid_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE IF NOT EXISTS payrolls (
+    id_payroll BIGSERIAL PRIMARY KEY,
+    nomor_slip VARCHAR(50) NOT NULL UNIQUE,
+    pegawai_id INT NOT NULL REFERENCES employees(id_pegawai) ON DELETE CASCADE,
+    bulan INT NOT NULL,
+    tahun INT NOT NULL,
+    periode_mulai DATE NOT NULL,
+    periode_selesai DATE NOT NULL,
+    total_hari_kerja_target INT DEFAULT 24,
+    total_hadir INT DEFAULT 0,
+    total_menit_terlambat INT DEFAULT 0,
+    total_jam_lembur DECIMAL(4, 2) DEFAULT 0.00,
+    total_pendapatan DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    total_potongan DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    gaji_bersih DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    status_pembayaran VARCHAR(30) DEFAULT 'DRAFT',
+    tanggal_bayar TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_payroll_emp_period ON payrolls(employee_id, period_start, period_end);
+CREATE INDEX idx_payroll_pegawai ON payrolls(pegawai_id);
 
 -- Rincian Komponen Gaji pada Slip Payroll
-CREATE TABLE payroll_items (
-    id BIGSERIAL PRIMARY KEY,
-    payroll_id BIGINT NOT NULL REFERENCES payrolls(id) ON DELETE CASCADE,
-    salary_component_id INT NOT NULL REFERENCES salary_components(id) ON DELETE RESTRICT,
-    amount DECIMAL(15, 2) NOT NULL CHECK (amount >= 0)
+CREATE TABLE IF NOT EXISTS payroll_items (
+    id_payroll_item BIGSERIAL PRIMARY KEY,
+    payroll_id BIGINT NOT NULL REFERENCES payrolls(id_payroll) ON DELETE CASCADE,
+    nama_komponen VARCHAR(100) NOT NULL,
+    tipe_komponen VARCHAR(30) NOT NULL,
+    nominal DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
+    keterangan VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_payroll_item_payroll ON payroll_items(payroll_id);
 
 -- Penilaian Kinerja Karyawan (Performance Appraisal)
 CREATE TABLE performance_appraisals (
     id SERIAL PRIMARY KEY,
-    employee_id INT NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
-    reviewer_id INT NOT NULL REFERENCES employees(id) ON DELETE RESTRICT, -- Store Manager / Supervisor
+    employee_id INT NOT NULL REFERENCES employees(id_pegawai) ON DELETE CASCADE,
+    reviewer_id INT NOT NULL REFERENCES employees(id_pegawai) ON DELETE RESTRICT, -- Store Manager / Supervisor
     evaluation_period VARCHAR(50) NOT NULL, -- e.g., 'Q3-2026', 'Semester 1 2026'
     evaluation_date DATE NOT NULL,
     speed_and_accuracy_score DECIMAL(3, 1) CHECK (speed_and_accuracy_score BETWEEN 1.0 AND 5.0), -- Kecepatan racik
@@ -346,7 +355,7 @@ CREATE TABLE purchase_orders (
     tax_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
     total_amount DECIMAL(15, 2) NOT NULL DEFAULT 0.00,
     notes TEXT,
-    created_by INT REFERENCES employees(id) ON DELETE SET NULL,
+    created_by INT REFERENCES employees(id_pegawai) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -374,7 +383,7 @@ CREATE TABLE goods_receipts (
     purchase_order_id BIGINT NOT NULL REFERENCES purchase_orders(id) ON DELETE RESTRICT,
     delivery_note_number VARCHAR(100), -- No Surat Jalan Vendor
     receipt_date TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    received_by INT NOT NULL REFERENCES employees(id) ON DELETE RESTRICT,
+    received_by INT NOT NULL REFERENCES employees(id_pegawai) ON DELETE RESTRICT,
     status VARCHAR(20) NOT NULL DEFAULT 'SUBMITTED' CHECK (status IN ('DRAFT', 'SUBMITTED', 'CANCELLED')),
     journal_entry_id BIGINT REFERENCES journal_entries(id) ON DELETE SET NULL, -- Jurnal otomatis pengakuan persediaan & hutang
     notes TEXT,
@@ -422,7 +431,7 @@ CREATE TABLE stock_mutations (
     reference_type VARCHAR(50), -- e.g., 'GOODS_RECEIPT', 'POS_SALE', 'STOCK_OPNAME', 'WASTE_LOG'
     reference_id BIGINT,        -- ID dokumen asal
     journal_entry_id BIGINT REFERENCES journal_entries(id) ON DELETE SET NULL, -- Jurnal finansial terkait jika timbul HPP/Beban Waste
-    created_by INT REFERENCES employees(id) ON DELETE SET NULL,
+    created_by INT REFERENCES employees(id_pegawai) ON DELETE SET NULL,
     notes TEXT,
     CONSTRAINT chk_qty_mutation CHECK (in_quantity > 0 OR out_quantity > 0)
 );
@@ -437,7 +446,7 @@ CREATE TABLE stock_opnames (
     opname_number VARCHAR(50) NOT NULL UNIQUE,
     location_id INT NOT NULL REFERENCES stock_locations(id) ON DELETE RESTRICT,
     opname_date DATE NOT NULL,
-    conducted_by INT NOT NULL REFERENCES employees(id) ON DELETE RESTRICT,
+    conducted_by INT NOT NULL REFERENCES employees(id_pegawai) ON DELETE RESTRICT,
     status VARCHAR(20) NOT NULL DEFAULT 'COMPLETED' CHECK (status IN ('DRAFT', 'COMPLETED', 'CANCELLED')),
     journal_entry_id BIGINT REFERENCES journal_entries(id) ON DELETE SET NULL, -- Jurnal selisih inventaris
     notes TEXT,

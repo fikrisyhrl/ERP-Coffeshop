@@ -14,6 +14,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let journalEntries = [];
   let chartOfAccounts = [];
   let employeeList = [];
+  try {
+    const cachedEmp = localStorage.getItem('kafeina_erp_employees');
+    if (cachedEmp) employeeList = JSON.parse(cachedEmp);
+  } catch {}
   let attendanceLogs = [];
   let purchaseOrders = [];
   let supplierList = [];
@@ -1231,11 +1235,20 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (data.success && Array.isArray(data.data)) {
         employeeList = data.data;
-      } else if (!employeeList || employeeList.length === 0) {
-        employeeList = default12Employees;
+        try { localStorage.setItem('kafeina_erp_employees', JSON.stringify(employeeList)); } catch {}
+      } else {
+        const cached = localStorage.getItem('kafeina_erp_employees');
+        if (cached) {
+          employeeList = JSON.parse(cached);
+        } else if (!employeeList || employeeList.length === 0) {
+          employeeList = default12Employees;
+        }
       }
     } catch {
-      if (!employeeList || employeeList.length === 0) {
+      const cached = localStorage.getItem('kafeina_erp_employees');
+      if (cached) {
+        employeeList = JSON.parse(cached);
+      } else if (!employeeList || employeeList.length === 0) {
         employeeList = default12Employees;
       }
     }
@@ -2672,6 +2685,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Tambahkan ke employeeList di urutan paling atas
     employeeList.unshift(newEmployee);
+    try { localStorage.setItem('kafeina_erp_employees', JSON.stringify(employeeList)); } catch {}
 
     // Re-render tabel pegawai secara instan tanpa reload halaman
     renderEmployeesTable(employeeList);
@@ -2699,6 +2713,7 @@ document.addEventListener('DOMContentLoaded', () => {
     employeeList = employeeList.filter(
       (e) => String(e.id_pegawai) !== idToFilter && String(e.kode_pegawai) !== idToFilter
     );
+    try { localStorage.setItem('kafeina_erp_employees', JSON.stringify(employeeList)); } catch {}
     renderEmployeesTable(employeeList);
     showToast(`Data karyawan '${namaLengkap}' telah dihapus dari antarmuka...`, 'info');
 

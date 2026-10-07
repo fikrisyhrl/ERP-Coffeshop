@@ -7,6 +7,9 @@ router.get('/pegawai', payrollController.getAllPegawai);
 router.post('/pegawai', payrollController.createPegawai);
 router.delete('/pegawai/:id', payrollController.deletePegawai);
 
+// Inisialisasi & Sinkronisasi Real Database HCM
+router.all('/init-db', payrollController.initDatabase);
+
 // GET /api/hcm/payroll/absensi & /api/hcm/absensi
 router.get('/absensi', payrollController.getAllAbsensi);
 

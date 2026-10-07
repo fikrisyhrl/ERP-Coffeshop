@@ -466,17 +466,24 @@ const payrollController = {
   },
 
   /**
-   * GET /api/hcm/pegawai
-   * Ambil daftar semua pegawai aktif beserta posisi dan departemen (Auto-seed 12 orang jika belum lengkap)
+   * GET/POST /api/hcm/init-db
+   * Endpoint inisialisasi & sinkronisasi struktur tabel HCM (Department, JobPosition, Employee, Attendance, Payroll)
    */
-  getAllPegawai: async (req, res, next) => {
+  initDatabase: async (req, res, next) => {
     try {
+      await Department.sync({ alter: true });
+      await JobPosition.sync({ alter: true });
+      await Employee.sync({ alter: true });
+      await Attendance.sync({ alter: true });
+      await Payroll.sync({ alter: true });
+      await PayrollItem.sync({ alter: true });
+
       const count = await Employee.count();
       if (count === 0) {
         await payrollController.seedDefaultEmployees();
       }
 
-      const employees = await Employee.findAll({
+      const list = await Employee.findAll({
         include: [
           {
             model: JobPosition,
@@ -486,6 +493,71 @@ const payrollController = {
         ],
         order: [['id_pegawai', 'ASC']]
       });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Struktur database Human Resource berhasil disinkronkan ke PostgreSQL Supabase!',
+        total_pegawai: list.length,
+        data: list
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * GET /api/hcm/pegawai
+   * Ambil daftar semua pegawai aktif beserta posisi dan departemen
+   */
+  getAllPegawai: async (req, res, next) => {
+    try {
+      let employees;
+      try {
+        const count = await Employee.count();
+        if (count === 0) {
+          await payrollController.seedDefaultEmployees();
+        }
+
+        employees = await Employee.findAll({
+          include: [
+            {
+              model: JobPosition,
+              as: 'posisi',
+              include: [{ model: Department, as: 'departemen' }]
+            }
+          ],
+          order: [['id_pegawai', 'ASC']]
+        });
+      } catch (dbErr) {
+        console.warn('⚠️ Query error pada getAllPegawai, mencoba sinkronisasi model Sequelize:', dbErr.message);
+        try {
+          await Department.sync({ alter: true });
+          await JobPosition.sync({ alter: true });
+          await Employee.sync({ alter: true });
+          await Attendance.sync({ alter: true });
+          await Payroll.sync({ alter: true });
+          await PayrollItem.sync({ alter: true });
+
+          const count = await Employee.count();
+          if (count === 0) {
+            await payrollController.seedDefaultEmployees();
+          }
+        } catch (syncErr) {
+          console.warn('⚠️ Gagal auto-sync:', syncErr.message);
+        }
+
+        employees = await Employee.findAll({
+          include: [
+            {
+              model: JobPosition,
+              as: 'posisi',
+              include: [{ model: Department, as: 'departemen' }]
+            }
+          ],
+          order: [['id_pegawai', 'ASC']]
+        });
+      }
+
       return res.status(200).json({ success: true, data: employees });
     } catch (error) {
       next(error);
@@ -527,10 +599,9 @@ const payrollController = {
 
   /**
    * DELETE /api/hcm/pegawai/:id
-   * Menghapus data karyawan beserta data absensi & slip gaji terkait
+   * Menghapus data karyawan secara permanen beserta data absensi & slip gaji terkait
    */
   deletePegawai: async (req, res, next) => {
-    const t = await sequelize.transaction();
     try {
       const { id } = req.params;
 
@@ -545,12 +616,11 @@ const payrollController = {
           }
         : { kode_pegawai: String(id) };
 
-      const employee = await Employee.findOne({ where: whereClause, transaction: t });
+      const employee = await Employee.findOne({ where: whereClause });
       if (!employee) {
-        await t.rollback();
         return res.status(404).json({
           success: false,
-          message: `Karyawan dengan ID/Kode '${id}' tidak ditemukan.`
+          message: `Karyawan dengan ID/Kode '${id}' tidak ditemukan di database.`
         });
       }
 
@@ -558,22 +628,27 @@ const payrollController = {
       const empName = employee.nama_lengkap;
       const empCode = employee.kode_pegawai;
 
-      // Hapus absensi & payroll terkait
-      await Attendance.destroy({ where: { pegawai_id: empId }, transaction: t });
-      await Payroll.destroy({ where: { pegawai_id: empId }, transaction: t });
+      // Hapus absensi & payroll terkait terlebih dahulu
+      try {
+        await Attendance.destroy({ where: { pegawai_id: empId } });
+      } catch (attErr) {
+        console.warn('Attendance cleanup note:', attErr.message);
+      }
+      try {
+        await Payroll.destroy({ where: { pegawai_id: empId } });
+      } catch (payErr) {
+        console.warn('Payroll cleanup note:', payErr.message);
+      }
 
-      // Hapus record karyawan
-      await employee.destroy({ transaction: t });
-
-      await t.commit();
+      // Hapus record karyawan secara permanen
+      await Employee.destroy({ where: { id_pegawai: empId } });
 
       return res.status(200).json({
         success: true,
-        message: `Karyawan '${empName}' (${empCode}) berhasil dihapus dari sistem HR.`,
+        message: `Karyawan '${empName}' (${empCode}) berhasil dihapus permanen dari database HR!`,
         data: { id_pegawai: empId, kode_pegawai: empCode, nama_lengkap: empName }
       });
     } catch (error) {
-      if (t && !t.finished) await t.rollback();
       next(error);
     }
   }
