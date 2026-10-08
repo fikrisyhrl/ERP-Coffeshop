@@ -16,9 +16,9 @@ const isPostgres =
 const poolConfig = {
   max: process.env.VERCEL ? 2 : 10,     // Di Vercel serverless, gunakan max 1-2 koneksi per instance
   min: 0,
-  acquire: 30000,                       // Timeout mendapatkan koneksi (30 detik)
-  idle: process.env.VERCEL ? 1000 : 10000, // Di Vercel, lepaskan koneksi idle lebih cepat
-  evict: process.env.VERCEL ? 1000 : 10000
+  acquire: 60000,                       // Timeout mendapatkan koneksi dinaikkan ke 60 detik
+  idle: 10000,
+  evict: 2000
 };
 
 if (process.env.DATABASE_URL) {

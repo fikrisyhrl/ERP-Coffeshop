@@ -2858,34 +2858,43 @@ document.addEventListener('DOMContentLoaded', () => {
     const konfirmasi = confirm(`Apakah Anda yakin ingin menghapus data karyawan '${namaLengkap}' dari sistem HR? Tindakan ini tidak dapat dibatalkan.`);
     if (!konfirmasi) return;
 
-    // 1. Optimistic UI update: langsung hapus dari list lokal dan update tabel seketika
-    const idToFilter = String(pegawaiId);
-    employeeList = employeeList.filter(
-      (e) => String(e.id_pegawai) !== idToFilter && String(e.kode_pegawai) !== idToFilter
-    );
-    try { localStorage.setItem('kafeina_erp_employees', JSON.stringify(employeeList)); } catch {}
-    renderEmployeesTable(employeeList);
-    showToast(`Data karyawan '${namaLengkap}' telah dihapus dari antarmuka...`, 'info');
+    showToast(`Sedang menghapus data '${namaLengkap}' dari database...`, 'info');
 
-    // 2. Kirim permintaan DELETE ke server database
+    // 1. Kirim permintaan DELETE ke server database terlebih dahulu
     try {
       const res = await fetch(`/api/hcm/pegawai/${pegawaiId}`, {
         method: 'DELETE'
       });
       const data = await res.json();
-      if (data.success) {
+
+      if (res.ok && data.success) {
+        // Hapus HANYA data yang benar-benar cocok dari list lokal setelah server konfirmasi sukses
+        const idToFilter = String(pegawaiId);
+        employeeList = employeeList.filter(
+          (e) => String(e.id_pegawai) !== idToFilter && String(e.kode_pegawai) !== idToFilter
+        );
+        try { localStorage.setItem('kafeina_erp_employees', JSON.stringify(employeeList)); } catch {}
+        renderEmployeesTable(employeeList);
         showToast(`✓ Data karyawan '${namaLengkap}' berhasil dihapus permanen dari sistem HR!`, 'success');
+
+        // Sinkronkan ke tab browser lain via real-time update
+        if (typeof triggerRealtimeUpdate === 'function') {
+          try { await triggerRealtimeUpdate('employee_deleted', { id_pegawai: pegawaiId, namaLengkap }); } catch {}
+        }
       } else {
         console.warn('Gagal menghapus di database:', data.message);
         showToast(`⚠️ Server: ${data.message || 'Gagal menghapus di database'}`, 'warning');
+        // Muat ulang data terbaru dari server agar tampilan sinkron dan tidak hilang
+        if (typeof loadHcmData === 'function') {
+          await loadHcmData();
+        }
       }
     } catch (err) {
       console.warn('Network error saat hapus pegawai:', err);
-    }
-
-    // 3. Sinkronkan ke tab browser lain via real-time update
-    if (typeof triggerRealtimeUpdate === 'function') {
-      try { await triggerRealtimeUpdate('employee_deleted', { id_pegawai: pegawaiId, namaLengkap }); } catch {}
+      showToast('⚠️ Gagal terhubung ke backend server. Periksa koneksi Anda.', 'warning');
+      if (typeof loadHcmData === 'function') {
+        await loadHcmData();
+      }
     }
   };
 
