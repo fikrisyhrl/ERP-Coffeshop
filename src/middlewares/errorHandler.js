@@ -38,11 +38,21 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  // Penanganan error relasi foreign key (Data terikat transaksi/riwayat lain)
+  if (err.name === 'SequelizeForeignKeyConstraintError') {
+    return res.status(409).json({
+      success: false,
+      message: 'Data tidak dapat dihapus karena masih terkait dengan data lain di sistem (misal riwayat slip gaji atau transaksi).'
+    });
+  }
+
   // Penanganan error koneksi database
-  if (err.name === 'SequelizeConnectionError') {
+  if (err.name === 'SequelizeConnectionError' || (err.name && err.name.includes('Connection'))) {
+    const { isPostgres } = require('../config/database');
+    const dbType = isPostgres ? 'Supabase (PostgreSQL)' : 'MySQL';
     return res.status(503).json({
       success: false,
-      message: 'Gagal terhubung ke database. Pastikan database MySQL aktif.'
+      message: `Gagal terhubung ke database ${dbType}. Pastikan koneksi ${isPostgres ? 'internet/layanan Supabase' : 'MySQL server lokal'} aktif.`
     });
   }
 

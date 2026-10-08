@@ -61,7 +61,7 @@ const startServer = async () => {
     // Sinkronisasi model Sequelize ke tabel database
     // alter: true memperbarui kolom jika ada perubahan tanpa menghapus data
     try {
-      await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
+      await sequelize.sync();
       console.log('✓ Tabel database berhasil disinkronisasi (Sequelize sync).');
     } catch (dbErr) {
       console.warn('⚠️ Tidak dapat menyinkronkan database:', dbErr.message);

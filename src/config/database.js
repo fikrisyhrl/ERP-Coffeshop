@@ -30,7 +30,21 @@ if (process.env.DATABASE_URL) {
       ssl: {
         require: true,
         rejectUnauthorized: false // Wajib untuk sertifikat cloud SSL Supabase
-      }
+      },
+      keepAlive: true
+    },
+    retry: {
+      match: [
+        /SequelizeConnectionError/,
+        /SequelizeConnectionRefusedError/,
+        /SequelizeHostNotFoundError/,
+        /SequelizeHostNotReachableError/,
+        /SequelizeInvalidConnectionError/,
+        /SequelizeConnectionTimedOutError/,
+        /Connection terminated unexpectedly/,
+        /TimeoutError/
+      ],
+      max: 3
     },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: poolConfig,

@@ -5,6 +5,7 @@ const {
   Employee,
   Attendance,
   Payroll,
+  PayrollItem,
   sequelize
 } = require('../models');
 
@@ -628,13 +629,22 @@ const payrollController = {
       const empName = employee.nama_lengkap;
       const empCode = employee.kode_pegawai;
 
-      // Hapus absensi & payroll terkait terlebih dahulu
+      // Hapus absensi & payroll terkait terlebih dahulu (termasuk item slip gaji)
       try {
         await Attendance.destroy({ where: { pegawai_id: empId } });
       } catch (attErr) {
         console.warn('Attendance cleanup note:', attErr.message);
       }
+
       try {
+        const payrolls = await Payroll.findAll({
+          where: { pegawai_id: empId },
+          attributes: ['id_payroll']
+        });
+        const payrollIds = payrolls.map((p) => p.id_payroll);
+        if (payrollIds.length > 0) {
+          await PayrollItem.destroy({ where: { payroll_id: payrollIds } });
+        }
         await Payroll.destroy({ where: { pegawai_id: empId } });
       } catch (payErr) {
         console.warn('Payroll cleanup note:', payErr.message);
