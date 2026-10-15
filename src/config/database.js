@@ -23,9 +23,47 @@ const poolConfig = {
   evict: isVercel ? 1000 : 2000
 };
 
-if (process.env.DATABASE_URL) {
+// Normalisasi otomatis Supabase URL jika user memasukkan Direct URL (IPv6 only) di Vercel
+let activeDatabaseUrl = process.env.DATABASE_URL;
+let autoConvertedFromDirect = false;
+
+if (activeDatabaseUrl) {
+  try {
+    const urlObj = new URL(activeDatabaseUrl);
+    // Jika host berupa db.[ref].supabase.co (Direct IPv6 yang gagal ENOTFOUND di Vercel)
+    if (urlObj.hostname.startsWith('db.') && urlObj.hostname.endsWith('.supabase.co')) {
+      const projectRef = urlObj.hostname.split('.')[1];
+      urlObj.hostname = 'aws-0-ap-northeast-1.pooler.supabase.com';
+      urlObj.port = '6543';
+      if (urlObj.username === 'postgres') {
+        urlObj.username = `postgres.${projectRef}`;
+      }
+      activeDatabaseUrl = urlObj.toString();
+      autoConvertedFromDirect = true;
+      console.log('ℹ️ Mengalihkan host Supabase Direct IPv6 ke Connection Pooler IPv4:', urlObj.hostname);
+    }
+  } catch (err) {
+    console.warn('Format DATABASE_URL tidak valid:', err.message);
+  }
+}
+
+let effectiveHost = process.env.DB_HOST || 'localhost';
+let effectivePort = parseInt(process.env.DB_PORT, 10) || 5432;
+let effectiveUser = process.env.DB_USER || 'postgres';
+
+if (effectiveHost && effectiveHost.startsWith('db.') && effectiveHost.endsWith('.supabase.co')) {
+  const projectRef = effectiveHost.split('.')[1];
+  effectiveHost = 'aws-0-ap-northeast-1.pooler.supabase.com';
+  effectivePort = 6543;
+  if (effectiveUser === 'postgres') {
+    effectiveUser = `postgres.${projectRef}`;
+  }
+  autoConvertedFromDirect = true;
+}
+
+if (activeDatabaseUrl) {
   // Mode Supabase / Cloud Postgres menggunakan Connection String URL (Port 6543 Transaction Pooler)
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+  sequelize = new Sequelize(activeDatabaseUrl, {
     dialect: 'postgres',
     dialectModule: pg,
     dialectOptions: {
@@ -57,11 +95,11 @@ if (process.env.DATABASE_URL) {
   // Mode Supabase / Postgres dengan variabel terpisah
   sequelize = new Sequelize(
     process.env.DB_NAME || 'postgres',
-    process.env.DB_USER || 'postgres',
+    effectiveUser,
     process.env.DB_PASSWORD || '',
     {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT, 10) || 5432,
+      host: effectiveHost,
+      port: effectivePort,
       dialect: 'postgres',
       dialectModule: pg,
       dialectOptions: {
@@ -107,14 +145,13 @@ const getDbDiagnostics = () => {
   let maskedUrl = null;
   let host = null;
   let port = null;
-
+  let username = null;
   let passwordLength = 0;
   let passwordEndsWithExclamation = false;
-  let username = null;
 
-  if (process.env.DATABASE_URL) {
+  if (activeDatabaseUrl) {
     try {
-      const parsed = new URL(process.env.DATABASE_URL);
+      const parsed = new URL(activeDatabaseUrl);
       host = parsed.hostname;
       port = parsed.port || '5432';
       username = parsed.username;
@@ -125,15 +162,16 @@ const getDbDiagnostics = () => {
       maskedUrl = 'INVALID_DATABASE_URL_FORMAT';
     }
   } else {
-    host = process.env.DB_HOST || (isPostgres ? 'db.supabase.co' : 'localhost');
-    port = process.env.DB_PORT || (isPostgres ? '5432' : '3306');
-    username = process.env.DB_USER;
+    host = effectiveHost;
+    port = effectivePort;
+    username = effectiveUser;
     passwordLength = process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 0;
   }
 
   return {
     environment: isVercel ? 'Vercel Serverless' : 'Local Standalone',
     hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+    autoConvertedFromDirect,
     maskedUrl,
     host,
     port,
