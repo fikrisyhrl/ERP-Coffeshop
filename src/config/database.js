@@ -108,11 +108,18 @@ const getDbDiagnostics = () => {
   let host = null;
   let port = null;
 
+  let passwordLength = 0;
+  let passwordEndsWithExclamation = false;
+  let username = null;
+
   if (process.env.DATABASE_URL) {
     try {
       const parsed = new URL(process.env.DATABASE_URL);
       host = parsed.hostname;
       port = parsed.port || '5432';
+      username = parsed.username;
+      passwordLength = parsed.password ? parsed.password.length : 0;
+      passwordEndsWithExclamation = parsed.password ? parsed.password.endsWith('!') : false;
       maskedUrl = `${parsed.protocol}//${parsed.username}:***@${parsed.hostname}:${port}${parsed.pathname}`;
     } catch {
       maskedUrl = 'INVALID_DATABASE_URL_FORMAT';
@@ -120,6 +127,8 @@ const getDbDiagnostics = () => {
   } else {
     host = process.env.DB_HOST || (isPostgres ? 'db.supabase.co' : 'localhost');
     port = process.env.DB_PORT || (isPostgres ? '5432' : '3306');
+    username = process.env.DB_USER;
+    passwordLength = process.env.DB_PASSWORD ? process.env.DB_PASSWORD.length : 0;
   }
 
   return {
@@ -128,6 +137,9 @@ const getDbDiagnostics = () => {
     maskedUrl,
     host,
     port,
+    username,
+    passwordLength,
+    passwordEndsWithExclamation,
     dialect: isPostgres ? 'postgres' : 'mysql',
     isPostgres
   };
