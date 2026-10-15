@@ -29,8 +29,10 @@ app.get('/', (req, res) => {
 
 // Health Check Route
 app.get('/health', (req, res) => {
+  const { getDbDiagnostics } = require('./src/config/database');
   res.status(200).json({
     status: 'OK',
+    diagnostics: typeof getDbDiagnostics === 'function' ? getDbDiagnostics() : {},
     timestamp: new Date().toISOString(),
     uptime: process.uptime()
   });

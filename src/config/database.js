@@ -12,13 +12,15 @@ const isPostgres =
   (process.env.DB_PORT && (process.env.DB_PORT === '5432' || process.env.DB_PORT === '6543')) ||
   (process.env.DB_HOST && process.env.DB_HOST.includes('supabase'));
 
+const isVercel = Boolean(process.env.VERCEL);
+
 // Konfigurasi Pool Khusus Serverless (Vercel) vs Server Standalone
 const poolConfig = {
-  max: process.env.VERCEL ? 2 : 10,     // Di Vercel serverless, gunakan max 1-2 koneksi per instance
+  max: isVercel ? 1 : 10,                 // Di Vercel serverless, gunakan 1 koneksi per instance
   min: 0,
-  acquire: 60000,                       // Timeout mendapatkan koneksi dinaikkan ke 60 detik
-  idle: 10000,
-  evict: 2000
+  acquire: isVercel ? 8000 : 30000,      // Timeout acquire maksimal 8 detik di Vercel agar tidak melebihi hard timeout 10-15s
+  idle: isVercel ? 2000 : 10000,
+  evict: isVercel ? 1000 : 2000
 };
 
 if (process.env.DATABASE_URL) {
@@ -31,7 +33,8 @@ if (process.env.DATABASE_URL) {
         require: true,
         rejectUnauthorized: false // Wajib untuk sertifikat cloud SSL Supabase
       },
-      keepAlive: true
+      keepAlive: true,
+      statement_timeout: isVercel ? 7000 : 30000
     },
     retry: {
       match: [
@@ -44,7 +47,7 @@ if (process.env.DATABASE_URL) {
         /Connection terminated unexpectedly/,
         /TimeoutError/
       ],
-      max: 3
+      max: isVercel ? 1 : 3 // Di serverless batasi retry agar respon error cepat terkirim
     },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     pool: poolConfig,
@@ -65,7 +68,11 @@ if (process.env.DATABASE_URL) {
         ssl: {
           require: true,
           rejectUnauthorized: false
-        }
+        },
+        statement_timeout: isVercel ? 7000 : 30000
+      },
+      retry: {
+        max: isVercel ? 1 : 3
       },
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
       pool: poolConfig,
@@ -95,12 +102,44 @@ if (process.env.DATABASE_URL) {
   );
 }
 
+// Helper diagnostik konfigurasi database (Aman tanpa bocor password)
+const getDbDiagnostics = () => {
+  let maskedUrl = null;
+  let host = null;
+  let port = null;
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const parsed = new URL(process.env.DATABASE_URL);
+      host = parsed.hostname;
+      port = parsed.port || '5432';
+      maskedUrl = `${parsed.protocol}//${parsed.username}:***@${parsed.hostname}:${port}${parsed.pathname}`;
+    } catch {
+      maskedUrl = 'INVALID_DATABASE_URL_FORMAT';
+    }
+  } else {
+    host = process.env.DB_HOST || (isPostgres ? 'db.supabase.co' : 'localhost');
+    port = process.env.DB_PORT || (isPostgres ? '5432' : '3306');
+  }
+
+  return {
+    environment: isVercel ? 'Vercel Serverless' : 'Local Standalone',
+    hasDatabaseUrl: Boolean(process.env.DATABASE_URL),
+    maskedUrl,
+    host,
+    port,
+    dialect: isPostgres ? 'postgres' : 'mysql',
+    isPostgres
+  };
+};
+
 // Fungsi untuk mengetes koneksi database
 const testConnection = async () => {
   try {
     await sequelize.authenticate();
     const dbType = isPostgres ? 'PostgreSQL (Supabase)' : 'MySQL';
     console.log(`✓ Koneksi ke database ${dbType} berhasil terhubung.`);
+    return { success: true, dbType };
   } catch (error) {
     const dbType = isPostgres ? 'PostgreSQL (Supabase)' : 'MySQL';
     console.error(`✗ Gagal menghubungkan ke database ${dbType}:`, error.message);
@@ -111,7 +150,8 @@ const testConnection = async () => {
       console.log('👉 Pilihan B (Supabase Cloud): Isi DATABASE_URL di file .env dengan URI connection string Supabase Anda.');
       console.log('----------------------------------------------------\n');
     }
+    throw error;
   }
 };
 
-module.exports = { sequelize, testConnection, isPostgres };
+module.exports = { sequelize, testConnection, isPostgres, getDbDiagnostics };

@@ -48,11 +48,17 @@ const errorHandler = (err, req, res, next) => {
 
   // Penanganan error koneksi database
   if (err.name === 'SequelizeConnectionError' || (err.name && err.name.includes('Connection'))) {
-    const { isPostgres } = require('../config/database');
+    const { isPostgres, getDbDiagnostics } = require('../config/database');
     const dbType = isPostgres ? 'Supabase (PostgreSQL)' : 'MySQL';
+    const diagnostics = typeof getDbDiagnostics === 'function' ? getDbDiagnostics() : {};
+
     return res.status(503).json({
       success: false,
-      message: `Gagal terhubung ke database ${dbType}. Pastikan koneksi ${isPostgres ? 'internet/layanan Supabase' : 'MySQL server lokal'} aktif.`
+      message: `Gagal terhubung ke database ${dbType}. Pastikan koneksi ${isPostgres ? 'internet/layanan Supabase' : 'MySQL server lokal'} aktif.`,
+      error_name: err.name,
+      error_detail: err.message,
+      original_error: err.original ? err.original.message : (err.parent ? err.parent.message : null),
+      diagnostics
     });
   }
 
