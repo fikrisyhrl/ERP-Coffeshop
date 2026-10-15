@@ -2811,26 +2811,18 @@ document.addEventListener('DOMContentLoaded', () => {
         })
       });
       const data = await res.json();
-      if (data.success && data.data) {
+      if (res.ok && data.success && data.data) {
         newEmployee = data.data;
+      } else {
+        showToast(data.message || 'Gagal menyimpan karyawan ke database server.', 'error');
+        if (btn) btn.disabled = false;
+        return;
       }
     } catch (err) {
-      console.warn('Backend save error, using client fallback:', err);
-    }
-
-    // Jika backend offline atau fallback, buat record lokal
-    if (!newEmployee) {
-      const nextId = employeeList.length + 1;
-      newEmployee = {
-        id_pegawai: nextId,
-        kode_pegawai: `EMP-${String(nextId).padStart(3, '0')}`,
-        nama_lengkap,
-        posisi: { nama_jabatan: jabatan, departemen: { nama_departemen: departemen } },
-        status_kerja,
-        gaji_pokok,
-        nama_bank: rekening.split(' ')[0] || 'BCA',
-        nomor_rekening: rekening || '5270' + Math.floor(100000 + Math.random() * 900000)
-      };
+      console.warn('Backend save error:', err);
+      showToast('Gagal menghubungi server database: ' + err.message, 'error');
+      if (btn) btn.disabled = false;
+      return;
     }
 
     // Tambahkan ke employeeList di urutan paling atas

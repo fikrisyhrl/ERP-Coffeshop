@@ -428,10 +428,41 @@ const payrollController = {
         }
       });
 
-      // Generate kode pegawai berurutan
-      const count = await Employee.count();
-      const nextNum = count + 1;
-      const kode_pegawai = `EMP-${String(nextNum).padStart(3, '0')}`;
+      // Generate kode pegawai unik (mencari angka tertinggi yang pernah dibuat, bukan count)
+      const allEmployees = await Employee.findAll({ attributes: ['kode_pegawai'] });
+      let maxNum = 0;
+      for (const emp of allEmployees) {
+        if (emp.kode_pegawai) {
+          const match = emp.kode_pegawai.match(/EMP-(\d+)/);
+          if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            if (!isNaN(num) && num > maxNum) {
+              maxNum = num;
+            }
+          }
+        }
+      }
+
+      let nextNum = maxNum + 1;
+      let kode_pegawai = `EMP-${String(nextNum).padStart(3, '0')}`;
+
+      // Loop pengaman ekstra jika terjadi race condition
+      while (await Employee.findOne({ where: { kode_pegawai } })) {
+        nextNum++;
+        kode_pegawai = `EMP-${String(nextNum).padStart(3, '0')}`;
+      }
+
+      // Generate email unik yang aman dari duplikasi
+      const cleanName = nama_lengkap.trim().toLowerCase().replace(/[^a-z0-9]/g, '.');
+      let baseEmail = email ? email.trim() : `${cleanName}@kafeinaerp.com`;
+      let finalEmail = baseEmail;
+      let emailCounter = 1;
+
+      while (await Employee.findOne({ where: { email: finalEmail } })) {
+        emailCounter++;
+        const parts = baseEmail.split('@');
+        finalEmail = `${parts[0]}.${emailCounter}@${parts[1] || 'kafeinaerp.com'}`;
+      }
 
       const newEmployee = await Employee.create({
         kode_pegawai,
@@ -442,7 +473,7 @@ const payrollController = {
         nama_bank,
         nomor_rekening,
         telepon: telepon || '0812-' + Math.floor(1000 + Math.random() * 9000) + '-' + Math.floor(1000 + Math.random() * 9000),
-        email: email || `${nama_lengkap.toLowerCase().replace(/[^a-z0-9]/g, '.')}@kafeinaerp.com`,
+        email: finalEmail,
         is_active: true
       });
 
