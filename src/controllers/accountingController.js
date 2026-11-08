@@ -31,14 +31,121 @@ const accountingController = {
 
   /**
    * GET /api/finance/coa
-   * Mengambil daftar seluruh akun
+   * Mengambil daftar seluruh akun (auto-seed jika masih kosong)
    */
   getAllCoA: async (req, res, next) => {
     try {
-      const accounts = await ChartOfAccount.findAll({ order: [['kode_akun', 'ASC']] });
+      let accounts = await ChartOfAccount.findAll({ order: [['kode_akun', 'ASC']] });
+      if (accounts.length === 0) {
+        await accountingService.seedStandardCoA();
+        accounts = await ChartOfAccount.findAll({ order: [['kode_akun', 'ASC']] });
+      }
       return res.status(200).json({
         success: true,
         data: accounts
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * POST /api/finance/coa
+   * Tambah Akun Baru di Chart of Accounts (CRUD Create)
+   */
+  createCoA: async (req, res, next) => {
+    try {
+      const { kode_akun, nama_akun, tipe_akun, saldo_normal } = req.body;
+      if (!kode_akun || !nama_akun || !tipe_akun || !saldo_normal) {
+        return res.status(400).json({
+          success: false,
+          message: 'kode_akun, nama_akun, tipe_akun, dan saldo_normal wajib diisi'
+        });
+      }
+
+      const existing = await ChartOfAccount.findOne({ where: { kode_akun: kode_akun.trim() } });
+      if (existing) {
+        return res.status(400).json({
+          success: false,
+          message: `Kode akun ${kode_akun} sudah terdaftar dalam sistem`
+        });
+      }
+
+      const newAccount = await ChartOfAccount.create({
+        kode_akun: kode_akun.trim(),
+        nama_akun: nama_akun.trim(),
+        tipe_akun: tipe_akun.toUpperCase(),
+        saldo_normal: saldo_normal.toUpperCase(),
+        is_active: true
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: `Akun CoA [${newAccount.kode_akun}] ${newAccount.nama_akun} berhasil ditambahkan ke database!`,
+        data: newAccount
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * PUT /api/finance/coa/:id
+   * Perbarui Akun CoA (CRUD Update)
+   */
+  updateCoA: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { nama_akun, tipe_akun, saldo_normal, is_active } = req.body;
+
+      const account = await ChartOfAccount.findByPk(id);
+      if (!account) {
+        return res.status(404).json({ success: false, message: 'Akun CoA tidak ditemukan' });
+      }
+
+      if (nama_akun) account.nama_akun = nama_akun.trim();
+      if (tipe_akun) account.tipe_akun = tipe_akun.toUpperCase();
+      if (saldo_normal) account.saldo_normal = saldo_normal.toUpperCase();
+      if (typeof is_active === 'boolean') account.is_active = is_active;
+      await account.save();
+
+      return res.status(200).json({
+        success: true,
+        message: `Akun [${account.kode_akun}] berhasil diperbarui`,
+        data: account
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * DELETE /api/finance/coa/:id
+   * Hapus / Nonaktifkan Akun CoA (CRUD Delete)
+   */
+  deleteCoA: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const account = await ChartOfAccount.findByPk(id);
+      if (!account) {
+        return res.status(404).json({ success: false, message: 'Akun CoA tidak ditemukan' });
+      }
+
+      // Cek apakah akun sudah digunakan dalam jurnal
+      const usageCount = await JournalEntryLine.count({ where: { akun_id: id } });
+      if (usageCount > 0) {
+        account.is_active = false;
+        await account.save();
+        return res.status(200).json({
+          success: true,
+          message: `Akun [${account.kode_akun}] telah digunakan dalam ${usageCount} jurnal transaksi, sehingga statusnya dinonaktifkan (soft delete) demi integritas buku besar.`
+        });
+      }
+
+      await account.destroy();
+      return res.status(200).json({
+        success: true,
+        message: `Akun [${account.kode_akun}] ${account.nama_akun} berhasil dihapus permanen dari sistem.`
       });
     } catch (error) {
       next(error);
@@ -131,6 +238,30 @@ const accountingController = {
         success: true,
         message: 'Jurnal umum berhasil dicatat (Debet dan Kredit seimbang)',
         data: jurnal
+      });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * DELETE /api/finance/jurnal/:id
+   * Hapus Jurnal Manual (CRUD Delete)
+   */
+  deleteJurnal: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const jurnal = await JournalEntry.findByPk(id);
+      if (!jurnal) {
+        return res.status(404).json({ success: false, message: 'Data jurnal tidak ditemukan' });
+      }
+
+      await JournalEntryLine.destroy({ where: { jurnal_id: id } });
+      await jurnal.destroy();
+
+      return res.status(200).json({
+        success: true,
+        message: `Jurnal #${jurnal.nomor_jurnal} berhasil dihapus dari riwayat jurnal umum.`
       });
     } catch (error) {
       next(error);
@@ -312,7 +443,7 @@ const accountingController = {
                 dibayar_oleh: invStatus === 'PAID' ? 'Finance Specialist' : null,
                 catatan: `Invoice Tagihan Pembelian Barang PO #${p.nomor_po}`
               });
-            } catch {}
+            } catch { }
           }
           invoices = await PurchaseInvoice.findAll({
             include: [
@@ -480,37 +611,10 @@ const accountingController = {
    */
   getCashBalance: async (req, res, next) => {
     try {
-      const lines = await JournalEntryLine.findAll({
-        where: { akun_id: [1, 2] }
-      });
-
-      let kasToko = 15000000;
-      let bankBca = 85000000;
-
-      lines.forEach((l) => {
-        const debet = parseFloat(l.debet || 0);
-        const kredit = parseFloat(l.kredit || 0);
-        if (l.akun_id === 1) {
-          kasToko += (debet - kredit);
-        } else if (l.akun_id === 2) {
-          bankBca += (debet - kredit);
-        }
-      });
-
-      const totalUangTersedia = kasToko + bankBca;
-
+      const balanceData = await accountingService.hitungSaldoKasBank();
       return res.status(200).json({
         success: true,
-        data: {
-          kas_toko: kasToko,
-          bank_bca: bankBca,
-          total_uang_tersedia: totalUangTersedia,
-          formatted: {
-            kas_toko: `Rp ${kasToko.toLocaleString('id-ID')}`,
-            bank_bca: `Rp ${bankBca.toLocaleString('id-ID')}`,
-            total_uang_tersedia: `Rp ${totalUangTersedia.toLocaleString('id-ID')}`
-          }
-        }
+        data: balanceData
       });
     } catch (error) {
       next(error);
@@ -523,7 +627,11 @@ const accountingController = {
    */
   catatMutasiKas: async (req, res, next) => {
     try {
-      const { tipe_transaksi = 'PEMASUKAN_MODAL', akun_id = 2, nominal, keterangan, tanggal } = req.body;
+      const tipe_transaksi = req.body.tipe_transaksi || req.body.tipe || 'PEMASUKAN_MODAL';
+      const rawAkunId = req.body.akun_id || req.body.akun_kas_id || 2;
+      const nominal = parseFloat(req.body.nominal);
+      const keterangan = req.body.keterangan || '';
+      const tanggal = req.body.tanggal || new Date();
 
       const parsedNominal = parseFloat(nominal);
       if (isNaN(parsedNominal) || parsedNominal <= 0) {
@@ -533,65 +641,95 @@ const accountingController = {
         });
       }
 
-      const targetAkunId = parseInt(akun_id) === 1 ? 1 : 2;
-      const targetAkunNama = targetAkunId === 1 ? 'Kas Toko / Kasir' : 'Bank BCA Operasional';
+      // Cari akun Kas Toko dan Bank BCA dari DB
+      const akunKas = await ChartOfAccount.findOne({ where: { kode_akun: '1-1001' } });
+      const akunBank = await ChartOfAccount.findOne({ where: { kode_akun: '1-1002' } });
 
-      let kreditAkunId = 5; // 3-1001 Modal Pemilik
+      const kasId = akunKas ? akunKas.id_akun : 1;
+      const bankId = akunBank ? akunBank.id_akun : 2;
+
+      const isTargetKas = String(rawAkunId) === '1' || String(rawAkunId) === String(kasId) || String(rawAkunId) === '1-1001';
+      const targetAkun = isTargetKas ? (akunKas || { id_akun: kasId, nama_akun: 'Kas Toko / Kasir' }) : (akunBank || { id_akun: bankId, nama_akun: 'Bank BCA Operasional' });
+
+      // Tentukan akun kredit lawan
+      let kreditKode = '3-1001'; // Modal Pemilik
       let tipeJurnal = 'CAPITAL_INJECTION';
       let defaultDesc = 'Setoran Modal Pemilik / Penambahan Dana Kas';
 
       if (tipe_transaksi === 'PENJUALAN_KASIR') {
-        kreditAkunId = 6; // 4-1001 Pendapatan Penjualan
+        kreditKode = '4-1001';
         tipeJurnal = 'SALES_CASH';
-        defaultDesc = 'Pemasukan Penjualan Harian Kedai Kopi';
+        defaultDesc = 'Pemasukan Penjualan Harian Kasir Kedai Kopi';
       } else if (tipe_transaksi === 'PENDAPATAN_LAIN') {
-        kreditAkunId = 6;
+        kreditKode = '4-1001';
         tipeJurnal = 'OTHER_INCOME';
         defaultDesc = 'Pemasukan Operasional / Pendapatan Lain';
       } else if (tipe_transaksi === 'SET_SALDO_AWAL') {
-        kreditAkunId = 5;
+        kreditKode = '3-1001';
         tipeJurnal = 'INITIAL_BALANCE';
         defaultDesc = 'Penetapan Saldo Awal Kas / Bank';
+      }
+
+      let kreditAkun = await ChartOfAccount.findOne({ where: { kode_akun: kreditKode } });
+      if (!kreditAkun) {
+        kreditAkun = (await ChartOfAccount.findOne({ where: { tipe_akun: 'EKUITAS' } })) || { id_akun: 5, nama_akun: 'Modal Pemilik' };
       }
 
       const nomorJurnal = `JV-CASH-${Date.now().toString().slice(-6)}`;
       const descFinal = keterangan || defaultDesc;
 
+      // Simpan Jurnal Header
       const jurnal = await JournalEntry.create({
         nomor_jurnal: nomorJurnal,
         tanggal_jurnal: tanggal || new Date(),
         tipe_referensi: tipeJurnal,
-        keterangan: `${descFinal} (${targetAkunNama})`,
+        keterangan: `${descFinal} (${targetAkun.nama_akun})`,
         total_debet: parsedNominal,
         total_kredit: parsedNominal,
         status: 'POSTED'
       });
 
-      // Debet: Kas/Bank
+      // Debet: Kas/Bank (Aset bertambah)
       await JournalEntryLine.create({
         jurnal_id: jurnal.id_jurnal,
-        akun_id: targetAkunId,
+        akun_id: targetAkun.id_akun,
         debet: parsedNominal,
         kredit: 0.00,
-        catatan: `Penambahan saldo ${targetAkunNama}`
+        catatan: `Penambahan saldo ${targetAkun.nama_akun}`
       });
 
-      // Kredit: Modal / Pendapatan
+      // Kredit: Modal / Pendapatan (Ekuitas / Pendapatan bertambah)
       await JournalEntryLine.create({
         jurnal_id: jurnal.id_jurnal,
-        akun_id: kreditAkunId,
+        akun_id: kreditAkun.id_akun,
         debet: 0.00,
         kredit: parsedNominal,
         catatan: `Pengakuan ${descFinal}`
       });
 
+      // Ambil data jurnal lengkap dengan lines & akun relasi
+      const fullJurnal = await JournalEntry.findByPk(jurnal.id_jurnal, {
+        include: [
+          {
+            model: JournalEntryLine,
+            as: 'lines',
+            include: [{ model: ChartOfAccount, as: 'akun', attributes: ['id_akun', 'kode_akun', 'nama_akun', 'tipe_akun'] }]
+          }
+        ]
+      });
+
+      // Hitung saldo kas/bank terbaru secara realtime
+      const newBalances = await accountingService.hitungSaldoKasBank();
+
       return res.status(201).json({
         success: true,
-        message: `Data keuangan berhasil ditambahkan! Saldo ${targetAkunNama} bertambah Rp ${parsedNominal.toLocaleString('id-ID')}.`,
+        message: `Data keuangan berhasil ditambahkan! Saldo ${targetAkun.nama_akun} bertambah Rp ${parsedNominal.toLocaleString('id-ID')}.`,
         data: {
           nomor_jurnal: nomorJurnal,
           nominal: parsedNominal,
-          target_akun: targetAkunNama
+          target_akun: targetAkun.nama_akun,
+          jurnal: fullJurnal,
+          balances: newBalances
         }
       });
     } catch (error) {

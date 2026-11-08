@@ -65,6 +65,10 @@ const startServer = async () => {
     try {
       await sequelize.sync();
       console.log('✓ Tabel database berhasil disinkronisasi (Sequelize sync).');
+
+      // Isi data awal otomatis jika database baru / kosong
+      const { autoSeedDatabase } = require('./src/config/autoSeed');
+      await autoSeedDatabase();
     } catch (dbErr) {
       console.warn('⚠️ Tidak dapat menyinkronkan database:', dbErr.message);
       console.warn('ℹ️ Server tetap berjalan untuk melayani UI Dashboard & mode fallback.');

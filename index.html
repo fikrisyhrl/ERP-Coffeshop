@@ -492,6 +492,7 @@
                       <th>TOTAL KREDIT</th>
                       <th>STATUS</th>
                       <th>DETAIL AKUN</th>
+                      <th style="text-align: right;">AKSI</th>
                     </tr>
                   </thead>
                   <tbody id="table-body-jurnal">
@@ -511,6 +512,9 @@
                   <h3 class="table-title">Daftar Akun Standar Coffee Shop</h3>
                   <p class="table-subtitle">Klasifikasi akun keuangan terstruktur (Aset, Kewajiban, Ekuitas, Pendapatan, Beban).</p>
                 </div>
+                <div>
+                  <button class="btn btn-primary btn-sm" onclick="openModal('modal-create-coa')">🗂️ + Tambah Akun CoA</button>
+                </div>
               </div>
               <div class="table-responsive">
                 <table class="modern-table" id="table-coa">
@@ -521,6 +525,7 @@
                       <th>KLASIFIKASI TIPE</th>
                       <th>SALDO NORMAL</th>
                       <th>STATUS AKUN</th>
+                      <th style="text-align: right;">AKSI</th>
                     </tr>
                   </thead>
                   <tbody id="table-body-coa">
@@ -1338,6 +1343,49 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="closeModal('modal-jurnal')">Batal</button>
           <button type="submit" class="btn btn-primary">Posting Jurnal</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Tambah Akun Chart of Accounts (CoA) -->
+  <div class="modal-backdrop" id="modal-create-coa">
+    <div class="modal-box" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>🗂️ Tambah Akun Chart of Accounts (CoA)</h3>
+        <button class="modal-close" onclick="closeModal('modal-create-coa')">&times;</button>
+      </div>
+      <form id="form-create-coa" onsubmit="submitCreateCoa(event)">
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Kode Akun *</label>
+            <input type="text" id="coa-kode" class="form-control" placeholder="Contoh: 6-1003" required>
+          </div>
+          <div class="form-group">
+            <label>Klasifikasi Tipe *</label>
+            <select id="coa-tipe" class="form-control" required>
+              <option value="BEBAN" selected>BEBAN (Expense)</option>
+              <option value="ASET">ASET (Asset)</option>
+              <option value="KEWAJIBAN">KEWAJIBAN (Liability)</option>
+              <option value="EKUITAS">EKUITAS (Equity)</option>
+              <option value="PENDAPATAN">PENDAPATAN (Revenue)</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nama Akun Lengkap *</label>
+          <input type="text" id="coa-nama" class="form-control" placeholder="Contoh: Beban Pemasaran & Promosi Outlet" required>
+        </div>
+        <div class="form-group">
+          <label>Saldo Normal Akun *</label>
+          <select id="coa-saldo" class="form-control" required>
+            <option value="DEBET" selected>DEBET</option>
+            <option value="KREDIT">KREDIT</option>
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal('modal-create-coa')">Batal</button>
+          <button type="submit" class="btn btn-primary">+ Simpan Akun ke Database</button>
         </div>
       </form>
     </div>

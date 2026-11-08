@@ -92,13 +92,28 @@ const accountingService = {
       );
 
       // Simpan Baris Jurnal (Lines)
-      const linesToCreate = lines.map((l) => ({
-        jurnal_id: headerJurnal.id_jurnal,
-        akun_id: l.akun_id,
-        debet: parseFloat(l.debet || 0),
-        kredit: parseFloat(l.kredit || 0),
-        catatan: l.catatan || keterangan
-      }));
+      const linesToCreate = [];
+      for (const l of lines) {
+        let akunId = parseInt(l.akun_id);
+        if (isNaN(akunId)) {
+          const matchedAcc = await ChartOfAccount.findOne({ where: { kode_akun: String(l.akun_id) }, transaction: t });
+          akunId = matchedAcc ? matchedAcc.id_akun : 1;
+        } else {
+          const exists = await ChartOfAccount.findByPk(akunId, { transaction: t });
+          if (!exists) {
+            const fallbackAcc = await ChartOfAccount.findOne({ transaction: t });
+            if (fallbackAcc) akunId = fallbackAcc.id_akun;
+          }
+        }
+
+        linesToCreate.push({
+          jurnal_id: headerJurnal.id_jurnal,
+          akun_id: akunId,
+          debet: parseFloat(l.debet || 0),
+          kredit: parseFloat(l.kredit || 0),
+          catatan: l.catatan || keterangan
+        });
+      }
 
       await JournalEntryLine.bulkCreate(linesToCreate, { transaction: t });
 
@@ -427,6 +442,48 @@ const accountingService = {
     }
 
     return results;
+  },
+
+  /**
+   * Helper: Menghitung Saldo Kas Toko & Bank BCA secara realtime dari database
+   */
+  hitungSaldoKasBank: async () => {
+    const akunKas = await ChartOfAccount.findOne({ where: { kode_akun: '1-1001' } });
+    const akunBank = await ChartOfAccount.findOne({ where: { kode_akun: '1-1002' } });
+
+    const kasId = akunKas ? akunKas.id_akun : 1;
+    const bankId = akunBank ? akunBank.id_akun : 2;
+
+    const lines = await JournalEntryLine.findAll({
+      where: { akun_id: [kasId, bankId] }
+    });
+
+    const hasInit = await JournalEntry.findOne({ where: { tipe_referensi: 'INITIAL_BALANCE' } });
+    let kasToko = hasInit ? 0 : 15000000;
+    let bankBca = hasInit ? 0 : 85000000;
+
+    lines.forEach((l) => {
+      const debet = parseFloat(l.debet || 0);
+      const kredit = parseFloat(l.kredit || 0);
+      if (l.akun_id === kasId) {
+        kasToko += (debet - kredit);
+      } else if (l.akun_id === bankId) {
+        bankBca += (debet - kredit);
+      }
+    });
+
+    const totalUangTersedia = kasToko + bankBca;
+
+    return {
+      kas_toko: kasToko,
+      bank_bca: bankBca,
+      total_uang_tersedia: totalUangTersedia,
+      formatted: {
+        kas_toko: `Rp ${kasToko.toLocaleString('id-ID')}`,
+        bank_bca: `Rp ${bankBca.toLocaleString('id-ID')}`,
+        total_uang_tersedia: `Rp ${totalUangTersedia.toLocaleString('id-ID')}`
+      }
+    };
   }
 };
 

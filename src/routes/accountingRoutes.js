@@ -2,13 +2,17 @@ const express = require('express');
 const router = express.Router();
 const accountingController = require('../controllers/accountingController');
 
-// Inisialisasi & Daftar Chart of Accounts
+// Inisialisasi & Daftar Chart of Accounts (CRUD)
 router.post('/seed-coa', accountingController.seedCoA);
 router.get('/coa', accountingController.getAllCoA);
+router.post('/coa', accountingController.createCoA);
+router.put('/coa/:id', accountingController.updateCoA);
+router.delete('/coa/:id', accountingController.deleteCoA);
 
-// Pencatatan Jurnal
+// Pencatatan Jurnal & CRUD
 router.get('/jurnal', accountingController.getAllJurnal);
 router.post('/jurnal/manual', accountingController.jurnalManual);
+router.delete('/jurnal/:id', accountingController.deleteJurnal);
 
 // Skenario 1: Jurnal Pembayaran Gaji Karyawan (Payroll)
 router.post('/jurnal/payroll', accountingController.jurnalPayroll);
