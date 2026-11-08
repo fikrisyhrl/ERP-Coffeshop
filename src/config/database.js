@@ -1,7 +1,6 @@
 const { Sequelize } = require('sequelize');
 const dotenv = require('dotenv');
 const path = require('path');
-const sqlite3 = require('sqlite3');
 const pg = require('pg');
 const mysql2 = require('mysql2');
 
@@ -9,43 +8,65 @@ dotenv.config();
 
 const isVercel = Boolean(process.env.VERCEL);
 
-// Tentukan Dialect Database: 'sqlite' (Lokal Standalone Default), 'postgres' (Supabase), atau 'mysql' (XAMPP)
-let dialect = (process.env.DB_DIALECT || '').toLowerCase();
-if (!dialect) {
-  if (process.env.DATABASE_URL) {
-    dialect = 'postgres';
-  } else if (process.env.DB_HOST && process.env.DB_PORT === '3306') {
-    dialect = 'mysql';
-  } else {
-    dialect = 'sqlite';
+// Di Vercel Serverless, SELALU gunakan PostgreSQL (Cloud Supabase/Neon).
+// Jangan pernah memuat atau menggunakan native SQLite di Vercel Serverless.
+let dialect;
+if (isVercel) {
+  dialect = 'postgres';
+} else {
+  dialect = (process.env.DB_DIALECT || '').toLowerCase();
+  if (!dialect) {
+    if (process.env.DATABASE_URL) {
+      dialect = 'postgres';
+    } else if (process.env.DB_HOST && process.env.DB_PORT === '3306') {
+      dialect = 'mysql';
+    } else {
+      dialect = 'sqlite';
+    }
   }
 }
 
 const isPostgres = dialect === 'postgres';
-const isSqlite = dialect === 'sqlite';
+const isSqlite = dialect === 'sqlite' && !isVercel;
 const isMysql = dialect === 'mysql';
 
-// Path file SQLite lokal persisten
+// Path file SQLite lokal persisten (khusus local standalone)
 const sqliteStoragePath = path.resolve(__dirname, '../../database.sqlite');
+
+// Konfigurasi Pool Khusus Serverless (Vercel) vs Server Standalone
+const poolConfig = {
+  max: isVercel ? 1 : 10,
+  min: 0,
+  acquire: isVercel ? 8000 : 30000,
+  idle: isVercel ? 2000 : 10000,
+  evict: isVercel ? 1000 : 2000
+};
 
 let sequelize;
 
 if (isSqlite) {
-  // Mode 1: SQLite Lokal Persisten (Mandiri, Cepat, Zero-Config, Tidak Butuh Internet / Server Eksternal)
+  // Mode 1: SQLite Lokal Persisten (Hanya di Komputer Lokal)
+  let sqlite3;
+  try {
+    sqlite3 = require('sqlite3');
+  } catch (err) {
+    console.warn('⚠️ SQLite3 driver tidak dapat dimuat:', err.message);
+  }
+
   sequelize = new Sequelize({
     dialect: 'sqlite',
     dialectModule: sqlite3,
     storage: sqliteStoragePath,
-    logging: process.env.NODE_ENV === 'development' ? false : false,
+    logging: false,
     pool: {
-      max: isVercel ? 1 : 10,
+      max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000
     }
   });
 } else if (isPostgres) {
-  // Mode 2: Supabase / Cloud PostgreSQL
+  // Mode 2: Supabase / Cloud PostgreSQL (Default & Wajib di Vercel)
   let activeDatabaseUrl = process.env.DATABASE_URL;
   let autoConvertedFromDirect = false;
 
@@ -97,13 +118,7 @@ if (isSqlite) {
         max: isVercel ? 1 : 3
       },
       logging: process.env.NODE_ENV === 'development' ? console.log : false,
-      pool: {
-        max: isVercel ? 1 : 10,
-        min: 0,
-        acquire: isVercel ? 8000 : 30000,
-        idle: isVercel ? 2000 : 10000,
-        evict: isVercel ? 1000 : 2000
-      },
+      pool: poolConfig,
       timezone: '+07:00'
     });
   } else {
@@ -124,12 +139,7 @@ if (isSqlite) {
           statement_timeout: isVercel ? 7000 : 30000
         },
         logging: process.env.NODE_ENV === 'development' ? console.log : false,
-        pool: {
-          max: isVercel ? 1 : 10,
-          min: 0,
-          acquire: isVercel ? 8000 : 30000,
-          idle: 10000
-        },
+        pool: poolConfig,
         timezone: '+07:00'
       }
     );
